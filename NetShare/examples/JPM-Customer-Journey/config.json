@@ -1,6 +1,6 @@
 {
     "global_config": {
-        "original_data_file": "../../traces/JPM/journey-small.csv",
+        "original_data_file": "journey-small.csv",
         "overwrite": true,
         "dataset_type": "netflow",
         "n_chunks": 1,
