@@ -1,6 +1,6 @@
 {
     "global_config": {
-        "original_data_file": "../../traces/microservice/raw.csv",
+        "original_data_file": "raw.csv",
         "overwrite": true,
         "dataset_type": "netflow",
         "n_chunks": 1,
