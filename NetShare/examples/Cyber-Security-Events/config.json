@@ -1,6 +1,6 @@
 {
     "global_config": {
-        "original_data_file": "../../traces/cyber/flows.csv",
+        "original_data_file": "flows.csv",
         "overwrite": true,
         "dataset_type": "netflow",
         "n_chunks": 2,
