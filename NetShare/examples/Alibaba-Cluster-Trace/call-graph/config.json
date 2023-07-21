@@ -51,7 +51,9 @@
                     "encoding": "categorical"
                 },{
                     "column": "rt",
-                    "type": "float"
+                    "type": "float",
+                    "normalization": "MINUSONE_ONE",
+                    "log1p_norm": true
                 }
 
             ]
