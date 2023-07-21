@@ -32,20 +32,27 @@
                     "column": "msinstanceid",
                     "type": "string",
                     "encoding": "categorical"
+                },
+                {
+                    "column": "nodeid",
+                    "type": "string",
+                    "encoding": "categorical"
                 }
             ],
             "timeseries": [
                 {
-                    "column": "metrics",
-                    "type": "string",
-                    "encoding": "categorical"
+                    "column": "instance_cpu_usage",
+                    "type": "float",
+                    "normalization": "ZERO_ONE",
+                    "log1p_norm": true
                 },
                 {
-                    "column": "value",
+                    "column": "instance_memory_usage",
                     "type": "float",
                     "normalization": "ZERO_ONE",
                     "log1p_norm": true
                 }
+
             ]
         }
     },
@@ -59,7 +66,7 @@
                 10
             ],
             "sample_len_expand": true,
-            "epochs": 10,
+            "epochs": 40,
             "extra_checkpoint_freq": 1,
             "epoch_checkpoint_freq": 5
         }
