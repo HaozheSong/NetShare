@@ -1,0 +1,62 @@
+{
+    "global_config": {
+        "original_data_file": "../../traces/JPM/journey-small.csv",
+        "overwrite": true,
+        "dataset_type": "netflow",
+        "n_chunks": 1,
+        "dp": false
+    },
+    "default": "single_event_per_row.json",
+    "pre_post_processor": {
+        "class": "NetsharePrePostProcessor",
+        "config": {
+            "timestamp": {
+                "column": "ts",
+                "generation": true,
+                "encoding": "interarrival",
+                "normalization": "ZERO_ONE"
+            },
+            "word2vec": {
+                "vec_size": 10,
+                "model_name": "word2vec_vecSize",
+                "annoy_n_trees": 100,
+                "pretrain_model_path": null
+            },
+            "metadata": [
+                {
+                    "column": "CustomerId",
+                    "type": "string",
+                    "encoding": "word2vec_port"
+                },
+                {
+                    "column": "Label",
+                    "type": "string",
+                    "encoding": "categorical"
+                },
+                {
+                    "column": "Event",
+                    "type": "string",
+                    "encoding": "categorical"
+                }
+            ],
+            "timeseries": [
+
+            ]
+        }
+    },
+    "model": {
+        "class": "DoppelGANgerTorchModel",
+        "config": {
+            "batch_size": 100,
+            "sample_len": [
+                1,
+                5,
+                10
+            ],
+            "sample_len_expand": true,
+            "epochs": 10,
+            "extra_checkpoint_freq": 1,
+            "epoch_checkpoint_freq": 5
+        }
+    }
+}

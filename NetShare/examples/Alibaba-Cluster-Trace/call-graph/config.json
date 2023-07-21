@@ -1,0 +1,75 @@
+{
+    "global_config": {
+        "original_data_file": "../../traces/microservice/raw.csv",
+        "overwrite": true,
+        "dataset_type": "netflow",
+        "n_chunks": 1,
+        "dp": false
+    },
+    "default": "single_event_per_row.json",
+    "pre_post_processor": {
+        "class": "NetsharePrePostProcessor",
+        "config": {
+            "timestamp": {
+                "column": "timestamp",
+                "generation": true,
+                "encoding": "interarrival",
+                "normalization": "ZERO_ONE"
+            },
+            "word2vec": {
+                "vec_size": 10,
+                "model_name": "word2vec_vecSize",
+                "annoy_n_trees": 100,
+                "pretrain_model_path": null
+            },
+            "metadata": [
+                {
+                    "column": "traceid",
+                    "type": "string",
+                    "encoding": "word2vec_ip"
+                }
+            ],
+            "timeseries": [
+                {
+                    "column": "rpcid",
+                    "type": "string",
+                    "encoding": "word2vec_ip"
+                },
+                {
+                    "column": "um",
+                    "type": "string",
+                    "encoding": "categorical"
+                },
+                {
+                    "column": "rpctype",
+                    "type": "string",
+                    "encoding": "categorical"
+                },
+                {
+                    "column": "dm",
+                    "type": "string",
+                    "encoding": "categorical"
+                },{
+                    "column": "rt",
+                    "type": "float"
+                }
+
+            ]
+        }
+    },
+    "model": {
+        "class": "DoppelGANgerTorchModel",
+        "config": {
+            "batch_size": 100,
+            "sample_len": [
+                1,
+                5,
+                10
+            ],
+            "sample_len_expand": true,
+            "epochs": 10,
+            "extra_checkpoint_freq": 1,
+            "epoch_checkpoint_freq": 5
+        }
+    }
+}
