@@ -3,7 +3,7 @@
         "original_data_file": "flows.csv",
         "overwrite": true,
         "dataset_type": "netflow",
-        "n_chunks": 2,
+        "n_chunks": 1,
         "dp": false
     },
     "default": "single_event_per_row.json",
@@ -82,7 +82,7 @@
                 10
             ],
             "sample_len_expand": true,
-            "epochs": 40,
+            "epochs": 10,
             "extra_checkpoint_freq": 1,
             "epoch_checkpoint_freq": 5
         }
