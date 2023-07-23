@@ -2,6 +2,7 @@ import json
 import pandas as pd
 from zeek_processor import parse_func
 from config_io import Config
+import os
 
 
 def parse_format(field_format):
@@ -52,7 +53,8 @@ def parse_field(fields, df, result):
         result[field['to']] = df[field['name']].apply(getattr(parse_func, 'parse', None), field=field,
                                                       if_handle_abnormal=field['abnormal'],
                                                       func_name=field.get('parse', None))
-        result[field['to']] = result[field['to']].astype(field['format'], errors='ignore')
+        result[field['to']] = result[field['to']].astype(
+            field['format'], errors='ignore')
 
 
 def to_dataframe(input_config):
@@ -61,7 +63,8 @@ def to_dataframe(input_config):
     :param input_config: Input config with file path and format.
     :return: Extracted pandas dataframe.
     """
-    input_format = input_config.get('format', 'zeek_log_json')  # Default: 'zeek_log_json'
+    input_format = input_config.get(
+        'format', 'zeek_log_json')  # Default: 'zeek_log_json'
     path = input_config.get('path')
     if input_format == 'csv':
         return pd.read_csv(path)
@@ -84,7 +87,8 @@ def parse_to_csv(config_file):
     """
     config = Config.load_from_file(config_file)
     input_config = config['input_file']
-    output_file = config.get('output_file', './result.csv')  # Default: './result.csv'
+    # Default: './result.csv'
+    output_file = config.get('output_file', './result.csv')
 
     fields_configs = config['fields']
     fields = get_fields(fields_configs)
@@ -93,6 +97,7 @@ def parse_to_csv(config_file):
     result = pd.DataFrame({})
     parse_field(fields, df, result)
 
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)
     result.to_csv(output_file, index=True)
     return output_file
 
