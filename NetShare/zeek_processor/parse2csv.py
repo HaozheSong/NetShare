@@ -80,26 +80,24 @@ def to_dataframe(input_config):
     return pd.DataFrame(data)
 
 
-def parse_to_csv(config_file):
+def parse_to_csv(input_dataset, input_config, output_dataset):
     """
     Parse an input file to csv file according to a configuration file.
     :param config_file: Path to the configuration file.
     """
-    config = Config.load_from_file(config_file)
-    input_config = config['input_file']
-    # Default: './result.csv'
-    output_file = config.get('output_file', './result.csv')
+    config = Config.load_from_file(input_config)
 
     fields_configs = config['fields']
     fields = get_fields(fields_configs)
 
-    df = to_dataframe(input_config)
+    df = to_dataframe({
+        'path': str(input_dataset),
+        'format': 'csv',
+    })
     result = pd.DataFrame({})
     parse_field(fields, df, result)
 
-    os.makedirs(os.path.dirname(output_file), exist_ok=True)
-    result.to_csv(output_file, index=True)
-    return output_file
+    result.to_csv(output_dataset, index=True)
 
 
 if __name__ == '__main__':
