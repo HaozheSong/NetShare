@@ -7,16 +7,14 @@ from datetime import datetime
 import json
 import re
 
-class Pre_processor(object):
-    def __init__(self, input_dataset, input_default_configs, input_field_configs, 
-                 output_dataset, output_config):
+class csv_pre_processor(object):
+    def __init__(self, input_dataset, input_field_configs, output_dataset, output_config):
         self.df = pd.read_csv(input_dataset, index_col=0) 
         ## special fields store list, IP, time columns and its encoding method. 
         self.special_fields = {}
         self.changed_columns = {}
         self.fields = []
         self.deleted_columns = []
-        self.default_configs = input_default_configs
         self.input_field_configs = input_field_configs
         self.name_lists = collections.defaultdict(list)
         self.output_path = output_dataset
@@ -25,15 +23,11 @@ class Pre_processor(object):
 
     def create_configuration_file(self):
         ##1. Open the default config file 
-        with open(self.default_configs, 'r') as openfile:
-            json_object = json.load(openfile)
-
         with open(self.input_field_configs, 'r') as openfile:
-            input_fields = json.load(openfile)
+            json_object = json.load(openfile)
         openfile.close()
-        print(input_fields["fields"]["metadata"])
         for field in ["metadata", "timeseries", "timestamp"]: 
-            for col in input_fields["fields"][field]:
+            for col in json_object["fields"][field]: 
                 name = col["name"]
                 format = col["format"]
                 encoding = col["encoding"]
@@ -49,7 +43,17 @@ class Pre_processor(object):
                     delimiter = col["delimiter"]
                 else:
                     delimiter = None
-                res = self.create_json_obj(json_object, field, name, format, encoding, type, names, delimiter)
+                if "time_format" in col: 
+                    time_format = col["time_format"]
+                else: 
+                    time_format = None
+                if "normalization" in col:
+                    normalization = col["normalization"]
+                else: 
+                    normalization = None
+
+                res = self.create_json_obj(json_object, field, name, format, encoding, type, names, delimiter, time_format, 
+                                            normalization)
                 if res == False: 
                     col_info = {"name": name, "fields": field}
                     self.deleted_columns.append(col_info)
@@ -107,7 +111,8 @@ class Pre_processor(object):
                 }
         return obj
 
-    def create_json_obj(self, json_object, Fields, column, format, encoding, type, names, delimiter):
+    def create_json_obj(self, json_object, Fields, column, format, encoding, type, names, delimiter, time_format, 
+                        normalization):
         # Fields: "metadata", "timestamp", "timeseries"
         # column: column name in dataset 
         # format: data format {integer, float, string, timestamp, IP, list}
@@ -138,7 +143,9 @@ class Pre_processor(object):
         elif format == "timestamp":
              if type == "unprocessed": 
                 self.special_fields[column] = "timestamp"
-                self.changed_columns[column] = "timestamp"
+                self.changed_columns[column] = {}
+                self.changed_columns[column]["encoding"] = "timestamp"
+                self.changed_columns[column]["time_format"] = time_format
              obj = self.get_obj(column, "timestamp")
              self.fields.append(column)
              json_object["pre_post_processor"]["config"][Fields] = (obj)
@@ -244,7 +251,8 @@ class Pre_processor(object):
                     self.convert_IP_to_int(i, self.df.loc[i, col], col, encoding)
                 else: 
                     ## timestamp 
-                    self.convert_time_to_ns(i, col)
+                    time_format = self.changed_columns[col]["time_format"]
+                    self.convert_time_to_ns(i, col, time_format)
         
     def convert_IP_to_int(self, i, orig_ip, colname, type):
         if '.' in orig_ip and type == "IPv4":
@@ -256,10 +264,10 @@ class Pre_processor(object):
         else: 
             self.df.loc[i, colname] = 0
 
-    def convert_time_to_ns(self, i, col):
+    def convert_time_to_ns(self, i, col, time_format):
         datetime_str = self.df.loc[i, col]
         ##'%Y-%m-%d %H:%M:%S.%f'
-        strs = datetime.strptime(datetime_str, '%Y-%m-%d %H:%M:%S.%f')
+        strs = datetime.strptime(datetime_str, time_format)
         date64 = np.datetime64(strs)
         ts = (date64 - np.datetime64('1970-01-01T00:00:00Z')) / np.timedelta64(1, 's') * 100000 
         ts = int(ts)
@@ -288,10 +296,6 @@ class Pre_processor(object):
         abnormal_lists = self.detect_abnormal_value() 
         print("abnormal lists are ", abnormal_lists)
         self.change_abnormal_value(abnormal_lists)
-
-        ## change to float 
-        #self.df['packet__len'] = self.df['packet__len'].astype(float)
-        #self.df['IP__ttl'] =  self.df['IP__ttl'].astype(float)
         for col, v in self.special_fields.items():
             if v == "IPv4" or v == "IPv6" or v == "timestamp":
                 self.df[[col]] = self.df[[col]].apply(pd.to_numeric) 
@@ -305,15 +309,10 @@ class Pre_processor(object):
 
         with open(self.input_field_configs) as json_file:
             data = json.load(json_file)
-        print("DATA is ", data)
         data['changed_fields'] = self.changed_columns
 
-        print('--------------------')
-        print(self.deleted_columns)
         for col in self.deleted_columns:
             for element in data["fields"][col['fields']]: 
-                print("element is ", element)
-                print("col is ", col)
                 if element["name"] == col["name"]:
                     data["fields"][col['fields']].remove(element)
 
