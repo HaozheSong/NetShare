@@ -8,18 +8,18 @@ import json
 import re
 
 class Pre_processor(object):
-    def __init__(self, filename, default_configs, input_field_configs, 
-                 output_path, output_config):
-        self.df = pd.read_csv(filename, index_col=0) 
+    def __init__(self, input_dataset, input_default_configs, input_field_configs, 
+                 output_dataset, output_config):
+        self.df = pd.read_csv(input_dataset, index_col=0) 
         ## special fields store list, IP, time columns and its encoding method. 
         self.special_fields = {}
         self.changed_columns = {}
         self.fields = []
         self.deleted_columns = []
-        self.default_configs = default_configs
+        self.default_configs = input_default_configs
         self.input_field_configs = input_field_configs
         self.name_lists = collections.defaultdict(list)
-        self.output_path = output_path
+        self.output_path = output_dataset
         self.output_config = output_config
 
 
@@ -54,7 +54,7 @@ class Pre_processor(object):
                     col_info = {"name": name, "fields": field}
                     self.deleted_columns.append(col_info)
         
-        json_object["global_config"]["original_data_file"] = self.output_path
+        json_object["global_config"]["original_data_file"] = str(self.output_path)
 
         #3. Serializing json
         json_object = json.dumps(json_object, indent=4)

@@ -1,4 +1,8 @@
 {
+  "processors": {
+    "zeek": true,
+    "bowen": true
+  },
   "input_file": {
     "format": "zeek_log_json"
   },
@@ -44,6 +48,5 @@
         "encoding": "categorical"
       }
     ]
-  },
-  "changed_fields": {}
+  }
 }

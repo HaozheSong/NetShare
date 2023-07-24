@@ -89,7 +89,6 @@ def parse_to_csv(config_path, input_path, output_path='./result.csv'):
     """
     config = Config.load_from_file(config_path)
     input_config = config['input_file']
-
     fields_configs = config['fields']
     fields = get_fields(fields_configs)
 
