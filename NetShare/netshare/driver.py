@@ -54,28 +54,33 @@ class Driver:
         # copy dataset and user.json
         self.preprocess_dir = self.working_dir.joinpath('pre_processed_data')
         self.preprocess_dir.mkdir(parents=True, exist_ok=True)
-        self.preprocessed_dataset_file = self.preprocess_dir.joinpath(
+        self.moved_dataset_file = self.preprocess_dir.joinpath(
             self.dataset_file_name
+        )
+        self.preprocessed_dataset_file = self.preprocess_dir.joinpath(
+            'pre_processed.csv'
         )
         self.preprocessed_config_file = self.preprocess_dir.joinpath(
             self.config_file_name
         )
         shutil.copy2(
             src=self.dataset_file,
-            dst=self.preprocessed_dataset_file
+            dst=self.moved_dataset_file
         )
         shutil.copy2(
             src=self.config_file,
             dst=self.preprocessed_config_file
         )
         # preprocess dataset and user.json
-        if (self.config['processors']['zeek'] == True):
+        if self.config['processors']['zeek']:
             parse2csv.parse_to_csv(
-                input_dataset=self.preprocessed_dataset_file,
-                input_config=self.preprocessed_config_file,
-                output_dataset=self.preprocessed_dataset_file
+                config_path=self.preprocessed_config_file,
+                input_path=self.moved_dataset_file,
+                output_path=self.preprocessed_dataset_file
             )
-        if (self.config['processors']['bowen'] == True):
+        else:
+            self.preprocessed_dataset_file = self.moved_dataset_file
+        if self.config['processors']['bowen']:
             bowen_preprocessor = pre_processor.Pre_processor(
                 input_dataset=self.preprocessed_dataset_file,
                 input_default_configs='default.json',

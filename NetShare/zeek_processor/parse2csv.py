@@ -13,9 +13,9 @@ def parse_format(field_format):
     """
     if field_format is None:
         return 'str'
-    if field_format == 'string' or field_format == 'IP' or field_format == 'list' or field_format == 'timestamp':
+    if field_format == 'string' or field_format == 'IP' or field_format == 'list':
         return 'str'
-    if field_format == 'integer':
+    if field_format == 'integer' or field_format == 'timestamp':
         return 'int'
     return field_format
 
@@ -57,21 +57,21 @@ def parse_field(fields, df, result):
             field['format'], errors='ignore')
 
 
-def to_dataframe(input_config):
+def to_dataframe(input_path, input_config):
     """
     Extract origin input file to pandas dataframe.
-    :param input_config: Input config with file path and format.
+    :param input_path: Path to the input file.
+    :param input_config: Input config with file format.
     :return: Extracted pandas dataframe.
     """
     input_format = input_config.get(
         'format', 'zeek_log_json')  # Default: 'zeek_log_json'
-    path = input_config.get('path')
     if input_format == 'csv':
-        return pd.read_csv(path)
+        return pd.read_csv(input_path)
 
     # Zeek log in Json format
     data = []
-    with open(path) as input_file:
+    with open(input_path) as input_file:
         line = input_file.readline()
         while line:
             packet = json.loads(line)
@@ -80,25 +80,22 @@ def to_dataframe(input_config):
     return pd.DataFrame(data)
 
 
-def parse_to_csv(input_dataset, input_config, output_dataset):
+def parse_to_csv(config_path, input_path, output_path='./result.csv'):
     """
     Parse an input file to csv file according to a configuration file.
-    :param config_file: Path to the configuration file.
+    :param config_path: Path to the configuration file.
+    :param input_path: Path to the input file.
+    :param output_path: Path to the output csv file.
     """
-    config = Config.load_from_file(input_config)
-
+    config = Config.load_from_file(config_path)
+    input_config = config['input_file']
     fields_configs = config['fields']
     fields = get_fields(fields_configs)
 
-    df = to_dataframe({
-        'path': str(input_dataset),
-        'format': 'csv',
-    })
+    df = to_dataframe(input_path, input_config)
     result = pd.DataFrame({})
     parse_field(fields, df, result)
 
-    result.to_csv(output_dataset, index=True)
-
-
-if __name__ == '__main__':
-    parse_to_csv('./modbus_config.json')
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    result.to_csv(output_path, index=True)
+    return output_path

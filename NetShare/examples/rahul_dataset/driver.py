@@ -8,7 +8,6 @@ from netshare.driver import Driver
 #     # Change to False if you would not like to use Ray
 #     ray.config.enabled = False
 #     ray.init(address="auto")
-
 #     # pre processor for the log file
 #     preprocess_stage1_output = parse2csv.parse_to_csv('fields.json')
 
