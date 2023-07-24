@@ -9,11 +9,13 @@ if __name__ == '__main__':
     ray.init(address="auto")
 
     # pre processor for the log file
-    preprocess_stage1_output = parse2csv.parse_to_csv('fields.json')
+    preprocess_stage1_output_path = '../../results/rahul-dataset/pre_processed_data/zeek_preprocessed.csv'
+    parse2csv.parse_to_csv(config_path='fields.json', input_path='original.csv',
+                           output_path=preprocess_stage1_output_path)
 
     # pre processor for the csv file
     Pre_processor = pre_processor.Pre_processor(
-        filename="../../results/rahul-dataset/pre_processed_data/zeek_preprocessed.csv",
+        filename=preprocess_stage1_output_path,
         default_configs="default.json",
         input_field_configs="fields.json",
         output_path="../../results/rahul-dataset/pre_processed_data/final_preprocessed.csv",
