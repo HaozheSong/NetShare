@@ -1,6 +1,6 @@
 import netshare.ray as ray
 from netshare import Generator
-from pre_post_processor_mixed import pre_processor, post_processor
+from csv_processor import pre_processor, post_processor
 from zeek_processor import parse2csv
 from netshare.driver import Driver
 
