@@ -200,7 +200,7 @@ class Generator(object):
             return False
         return True
 
-    def visualize(self, work_folder):
+    def visualize(self, work_folder, local_web):
         work_folder = os.path.expanduser(work_folder)
         os.makedirs(self._get_visualization_folder(work_folder), exist_ok=True)
         real_data = pd.read_csv(
@@ -240,4 +240,12 @@ class Generator(object):
             config_dict=sdmetrics_config['config'])
         my_report.generate(real_data[synthetic_data.columns], synthetic_data,
                            sdmetrics_config['metadata'])
-        my_report.visualize()
+
+        save_folder = os.path.join(work_folder, 'result')
+        os.makedirs(save_folder, exist_ok=True)
+        my_report.fig2png(save_folder)
+        my_report.fig2json(save_folder)
+        my_report.save_result_as_json(save_folder)
+
+        if local_web:
+            my_report.visualize()
