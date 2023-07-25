@@ -200,7 +200,7 @@ class Generator(object):
             return False
         return True
 
-    def visualize(self, work_folder, local_web):
+    def visualize(self, work_folder, local_web, local_web_port=8050):
         work_folder = os.path.expanduser(work_folder)
         os.makedirs(self._get_visualization_folder(work_folder), exist_ok=True)
         real_data = pd.read_csv(
@@ -248,4 +248,4 @@ class Generator(object):
         my_report.save_result_as_json(save_folder)
 
         if local_web:
-            my_report.visualize()
+            my_report.visualize(local_web_port)

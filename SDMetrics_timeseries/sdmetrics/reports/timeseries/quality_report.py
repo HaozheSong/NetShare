@@ -74,7 +74,7 @@ class QualityReport:
             else:
                 self._traverse_metrics_dict(scores, html_children)
 
-    def visualize(self):
+    def visualize(self, local_web_port=8050):
         app = dash.Dash(__name__)
         html_children = []
         for metric_type, metrics_dict in self.dict_metric_scores.items():
@@ -86,7 +86,7 @@ class QualityReport:
             self._traverse_metrics_dict(metrics_dict, html_children)
 
         app.layout = html.Div(children=html_children)
-        app.run_server(debug=False)
+        app.run_server(debug=False, port=local_web_port)
 
     def get_fig_refs(self, dict_var, figs_dict):
         # ------------------------------depth=2------------------------------

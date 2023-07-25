@@ -2,6 +2,7 @@ import pathlib
 import shutil
 import json
 import sys
+from multiprocessing import Process
 
 import netshare.ray as ray
 from netshare import Generator
@@ -24,7 +25,8 @@ class Driver:
 
     def __init__(self, working_dir_name, dataset_file, config_file,
                  overwrite_existing_working_dir=False,
-                 redirect_stdout_stderr=False, separate_stdout_stderr_log=False):
+                 redirect_stdout_stderr=False, separate_stdout_stderr_log=False,
+                 ray_enabled=False, local_web=True, local_web_port=8050):
         """
         Arguments:
         :param working_dir_name: create a working directory `.../NetShare/results/<working_dir_name>` and work there
@@ -47,7 +49,20 @@ class Driver:
         and log stderr to `.../NetShare/results/<working_dir_name>/logs/stderr.log`,
         valid only when `log_stdout_stderr` is `True`
         :type stderr: boolean
+
+        :param ray_enabled: `True` to enable Ray
+        :type ray_enabled: boolean
+
+        :param local_web: `True` to visualize results in a local website
+        :type local_web: boolean
+
+        :param local_web_port: local website port, useful to visualize results of multiple parallel drivers
+        :type local_web_port: int
         """
+        self.ray_enabled = ray_enabled
+        self.local_web = local_web
+        self.local_web_port = local_web_port
+
         # working_dir = '.../NetShare/results/<working_dir_name>'
         self.working_dir = self.results_dir.joinpath(working_dir_name)
         if self.working_dir.is_dir() and overwrite_existing_working_dir:
@@ -122,28 +137,22 @@ class Driver:
             )
             bowen_preprocessor.processor()
 
-    def run(self, ray_enabled=False, local_web=True):
-        """
-        Train, generate and visualize. Result json and images will be stored in 
-        `.../NetShare/results/<working_dir_name>/result` which can be visualized by a local website.
-
-        Arguments:
-        :param ray_enabled: `True` to enable Ray
-        :type ray_enabled: boolean
-
-        :param local_web: `True` to visualize results in a local website
-        :type local_web: boolean
-        """
+    def run(self):
         self.preprocess()
         config_file_abs_path = str(self.preprocessed_config_file.resolve())
         working_dir_abs_path = str(self.working_dir.resolve())
-        ray.config.enabled = ray_enabled
+        ray.config.enabled = self.ray_enabled
         ray.init(address="auto")
         generator = Generator(config=config_file_abs_path)
         generator.train(work_folder=working_dir_abs_path)
         generator.generate(work_folder=working_dir_abs_path)
         generator.visualize(
             work_folder=working_dir_abs_path,
-            local_web=local_web
+            local_web=self.local_web,
+            local_web_port=self.local_web_port
         )
         ray.shutdown()
+
+    def run_in_a_process(self):
+        process = Process(target=self.run)
+        process.start()
