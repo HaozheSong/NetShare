@@ -32,11 +32,6 @@
                     "column": "msinstanceid",
                     "type": "string",
                     "encoding": "categorical"
-                },
-                {
-                    "column": "nodeid",
-                    "type": "string",
-                    "encoding": "categorical"
                 }
             ],
             "timeseries": [
@@ -51,6 +46,11 @@
                     "type": "float",
                     "normalization": "ZERO_ONE",
                     "log1p_norm": true
+                },
+                {
+                    "column": "nodeid",
+                    "type": "string",
+                    "encoding": "categorical"
                 }
 
             ]

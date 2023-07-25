@@ -26,13 +26,12 @@
                 {
                     "column": "srcip",
                     "type": "string",
-                    "encoding": "categorical"                
+                    "encoding": "word2vec_ip"                
                 },
                 {
                     "column": "dstip",
                     "type": "string",
-                    "encoding": "categorical"
-
+                    "encoding": "word2vec_ip"
                 },
                 {
                     "column": "srcport",
@@ -61,13 +60,13 @@
                     "column": "pkt",
                     "type": "float",
                     "normalization": "ZERO_ONE",
-                    "log1p_norm": true
+                    "log1p_norm": false
                 },
                 {
                     "column": "byt",
                     "type": "float",
                     "normalization": "ZERO_ONE",
-                    "log1p_norm": true
+                    "log1p_norm": false
                 }
             ]
         }
