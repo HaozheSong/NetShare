@@ -1,15 +1,15 @@
 import json
 import pandas as pd
-from . import parse_func 
-from config_io import Config
+from . import parse_func
 import os
 
 
-
-class parse_to_csv(object):
+class Stage1Preprocessor(object):
     def __init__(self):
         self.result = pd.DataFrame({})
-    def parse_format(self, field_format):
+
+    @staticmethod
+    def parse_format(field_format):
         """
         Parse format in the config file to Python type.
         :param field_format: Field format in the config file.
@@ -23,8 +23,8 @@ class parse_to_csv(object):
             return 'int'
         return field_format
 
-
-    def get_fields(self, fields):
+    @staticmethod
+    def get_fields(fields):
         """
         Extract field configurations from the origin fields config and fill in default values.
         :param fields: Origin fields config.
@@ -38,15 +38,15 @@ class parse_to_csv(object):
                 if 'to' not in field:
                     field['to'] = field['name']
                 # Default for format: str
-                field['format'] = self.parse_format(field.get('format', 'str'))
+                field['format'] = Stage1Preprocessor.parse_format(field.get('format', 'str'))
                 # Default for abnormal: false
                 if 'abnormal' not in field:
                     field['abnormal'] = False
                 result.append(field)
         return result
 
-
-    def parse_field(self, fields, df, result):
+    @staticmethod
+    def parse_field(fields, df, result):
         """
         Parse all the fields one by one according to the config.
         :param fields: Fields configs.
@@ -55,25 +55,24 @@ class parse_to_csv(object):
         """
         for field in fields:
             result[field['to']] = df[field['name']].apply(getattr(parse_func, 'parse', None), field=field,
-                                                        if_handle_abnormal=field['abnormal'],
-                                                        func_name=field.get('parse', None))
+                                                          if_handle_abnormal=field['abnormal'],
+                                                          func_name=field.get('parse', None))
             result[field['to']] = result[field['to']].astype(
                 field['format'], errors='ignore')
 
-
-    def to_dataframe(self, input_path, input_config):
+    @staticmethod
+    def to_dataframe(input_path, input_config):
         """
         Extract origin input file to pandas dataframe.
         :param input_path: Path to the input file.
         :param input_config: Input config with file format.
         :return: Extracted pandas dataframe.
         """
-        input_format = input_config.get(
-            'format', 'zeek_log_json')  # Default: 'zeek_log_json'
+        input_format = input_config.get('format', 'zeek_log_json')  # Default: 'zeek_log_json'
         if input_format == 'csv':
             return pd.read_csv(input_path)
 
-        # Zeek log in Json format
+        # Zeek log in JSON format
         data = []
         with open(input_path) as input_file:
             line = input_file.readline()
@@ -82,7 +81,6 @@ class parse_to_csv(object):
                 data.append(packet)
                 line = input_file.readline()
         return pd.DataFrame(data)
-
 
     def parse_to_csv(self, config_path, input_path, output_path='./result.csv'):
         """
@@ -95,11 +93,10 @@ class parse_to_csv(object):
             config = json.load(openfile)
         input_config = config['input_file']
         fields_configs = config['fields']
-        fields = self.get_fields(fields_configs)
+        fields = Stage1Preprocessor.get_fields(fields_configs)
 
-        df = self.to_dataframe(input_path, input_config)
-        self.parse_field(fields, df, self.result)
+        df = Stage1Preprocessor.to_dataframe(input_path, input_config)
+        Stage1Preprocessor.parse_field(fields, df, self.result)
 
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
         self.result.to_csv(output_path, index=True)
-        return output_path

@@ -7,7 +7,7 @@ from multiprocessing import Process
 import netshare.ray as ray
 from netshare import Generator
 
-from netshare.pre_post_processors import parse_to_csv
+from netshare.pre_post_processors import Stage1Preprocessor
 from netshare.pre_post_processors import csv_pre_processor, csv_post_processor
 
 
@@ -124,7 +124,7 @@ class Driver:
         with open(self.config_file) as self.config_fd:
             self.config = json.load(self.config_fd)
         if self.config['processors']['zeek']:
-            zeek_processor = parse_to_csv()
+            zeek_processor = Stage1Preprocessor()
             zeek_processor.parse_to_csv(
                 config_path=self.preprocessed_config_file,
                 input_path=self.moved_dataset_file,

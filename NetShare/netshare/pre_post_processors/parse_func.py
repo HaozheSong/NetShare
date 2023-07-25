@@ -4,6 +4,7 @@ import pandas as pd
 
 current_module = sys.modules[__name__]
 
+
 def parse(value, field, if_handle_abnormal, func_name=None):
     """
     Entrance of all the parse functions.
