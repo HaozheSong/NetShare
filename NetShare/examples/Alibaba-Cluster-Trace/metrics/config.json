@@ -1,4 +1,8 @@
 {
+    "processors": {
+        "zeek": false,
+        "bowen": false
+    },
     "global_config": {
         "original_data_file": "raw.csv",
         "overwrite": true,
@@ -59,7 +63,7 @@
                 10
             ],
             "sample_len_expand": true,
-            "epochs": 10,
+            "epochs": 40,
             "extra_checkpoint_freq": 1,
             "epoch_checkpoint_freq": 5
         }

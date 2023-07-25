@@ -1,4 +1,8 @@
 {
+    "processors": {
+        "zeek": false,
+        "bowen": false
+    },
     "global_config": {
         "original_data_file": "raw.csv",
         "overwrite": true,
@@ -64,8 +68,6 @@
         "config": {
             "batch_size": 100,
             "sample_len": [
-                1,
-                5,
                 10
             ],
             "sample_len_expand": true,
