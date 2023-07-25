@@ -1,7 +1,8 @@
 {
     "processors": {
         "zeek": false,
-        "bowen": false
+        "pre_csv": false,
+        "post_csv": false
     },
     "global_config": {
         "original_data_file": "flows.csv",
