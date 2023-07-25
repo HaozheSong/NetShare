@@ -1,21 +1,9 @@
-import random
-import netshare.ray as ray
-from netshare import Generator
+from netshare.driver import Driver
 
 if __name__ == '__main__':
-    # Change to False if you would not like to use Ray
-    ray.config.enabled = False
-    ray.init(address="auto")
-
-    # configuration file
-    generator = Generator(config="config.json")
-
-    # `work_folder` should not exist o/w an overwrite error will be thrown.
-    # Please set the `worker_folder` as *absolute path*
-    # if you are using Ray with multi-machine setup
-    # since Ray has bugs when dealing with relative paths.
-    generator.train(work_folder=f'../../results/test-JPM')
-    generator.generate(work_folder=f'../../results/test-JPM')
-    generator.visualize(work_folder=f'../../results/test-JPM')
-
-    ray.shutdown()
+    driver = Driver(
+        working_dir_name='JPM-Customer-Journey',
+        dataset_file='journey-small.csv',
+        config_file='config.json',
+    )
+    driver.run()

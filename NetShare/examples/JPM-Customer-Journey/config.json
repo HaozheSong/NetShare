@@ -1,4 +1,8 @@
 {
+    "processors": {
+        "zeek": false,
+        "bowen": false
+    },
     "global_config": {
         "original_data_file": "journey-small.csv",
         "overwrite": true,
