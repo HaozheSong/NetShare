@@ -1,6 +1,7 @@
 import pathlib
 import shutil
 import json
+import sys
 
 import netshare.ray as ray
 from netshare import Generator
@@ -22,7 +23,8 @@ class Driver:
     results_dir = netshare_dir.joinpath('results')
 
     def __init__(self, working_dir_name, dataset_file, config_file,
-                 overwrite_existing_working_dir=False):
+                 overwrite_existing_working_dir=False,
+                 redirect_stdout_stderr=False, separate_stdout_stderr_log=False):
         """
         Arguments:
         :param working_dir_name: create a working directory `.../NetShare/results/<working_dir_name>` and work there
@@ -36,13 +38,41 @@ class Driver:
 
         :param overwrite_existing_working_dir: `True` to delete old existing working directory and create a new one
         :type overwrite_existing_working_dir: boolean, default `False`
-        """
 
+        TODO: there is still something printed out in the terminal
+        :param log_stdout_stderr: log stdout and stderr to `.../NetShare/results/<working_dir_name>/logs/stdout_stderr.log`
+        :type stderr: boolean
+
+        :param separate_stdout_stderr_log: log stdout to `.../NetShare/results/<working_dir_name>/logs/stdout.log`,
+        and log stderr to `.../NetShare/results/<working_dir_name>/logs/stderr.log`,
+        valid only when `log_stdout_stderr` is `True`
+        :type stderr: boolean
+        """
         # working_dir = '.../NetShare/results/<working_dir_name>'
         self.working_dir = self.results_dir.joinpath(working_dir_name)
         if self.working_dir.is_dir() and overwrite_existing_working_dir:
             shutil.rmtree(self.working_dir)
         self.working_dir.mkdir(parents=True, exist_ok=True)
+
+        # logs_dir = '.../NetShare/results/<working_dir_name>/logs'
+        self.logs_dir = self.working_dir.joinpath('logs')
+        self.logs_dir.mkdir(parents=True, exist_ok=True)
+        # stdout_stderr_log_file = '.../NetShare/results/<working_dir_name>/logs/stdout_stderr.log
+        self.stdout_stderr_log_file = self.logs_dir.joinpath(
+            'stdout_stderr.log'
+        )
+        # stdout_log_file = '.../NetShare/results/<working_dir_name>/logs/stdout.log
+        self.stdout_log_file = self.logs_dir.joinpath('stdout.log')
+        # stderr_log_file = '.../NetShare/results/<working_dir_name>/logs/stderr.log
+        self.stderr_log_file = self.logs_dir.joinpath('stderr.log')
+        if redirect_stdout_stderr:
+            if separate_stdout_stderr_log:
+                sys.stdout = open(self.stdout_log_file, 'w')
+                sys.stderr = open(self.stderr_log_file, 'w')
+            else:
+                stdout_stderr_log_fd = open(self.stdout_stderr_log_file, 'w')
+                sys.stdout = stdout_stderr_log_fd
+                sys.stderr = stdout_stderr_log_fd
 
         self.dataset_file = pathlib.Path(dataset_file)
         self.dataset_file_name = self.dataset_file.name
@@ -117,23 +147,3 @@ class Driver:
             local_web=local_web
         )
         ray.shutdown()
-
-
-class WebDriver(Driver):
-    def __init__(self, working_dir_name, dataset_file_name, config_file_name):
-        # working_dir = '.../NetShare/results/<working_dir_name>'
-        self.working_dir = self.results_dir.joinpath(working_dir_name)
-        self.working_dir.mkdir(parents=True, exist_ok=True)
-
-        # src_dir stores original dataset and config.json uploaded by the user (only for WebDriver)
-        # src_dir = '.../NetShare/results/<working_dir_name>/src'
-        self.src_dir = self.working_dir.joinpath('src')
-
-        self.dataset_file = self.src_dir.joinpath(dataset_file_name)
-        self.config_file = self.src_dir.joinpath(config_file_name)
-
-        super().__init__(
-            working_dir_name,
-            str(self.dataset_file.resolve()),
-            str(self.config_file.resolve())
-        )
