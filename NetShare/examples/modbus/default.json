@@ -1,0 +1,35 @@
+{
+    "global_config": {
+        "overwrite": true,
+        "dataset_type": "pcap",
+        "n_chunks": 1,
+        "dp": false
+    },
+    "default": "single_event_per_row.json",
+    "pre_post_processor": {
+        "class": "NetsharePrePostProcessor",
+        "config": {
+            "word2vec": {
+                "vec_size": 10,
+                "model_name": "word2vec_vecSize",
+                "annoy_n_trees": 100,
+                "pretrain_model_path": null
+            },
+            "metadata": [],
+            "timeseries": []
+        }
+    },
+    "model": {
+        "class": "DoppelGANgerTorchModel",
+        "config": {
+            "batch_size": 100,
+            "sample_len": [
+                10
+            ],
+            "sample_len_expand": true,
+            "epochs": 5,
+            "extra_checkpoint_freq": 1,
+            "epoch_checkpoint_freq": 5
+        }
+    }
+}

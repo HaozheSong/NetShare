@@ -1,0 +1,52 @@
+{
+  "processors": {
+    "zeek": true,
+    "bowen": true
+  },
+  "input_file": {
+    "format": "zeek_log_json"
+  },
+  "fields": {
+    "timestamp": [
+      {
+        "name": "ts",
+        "parse": "second2micro",
+        "format": "timestamp",
+        "encoding": "timestamp"
+      }
+    ],
+    "metadata": [
+      {
+        "name": "id.orig_h",
+        "parse": "ip_quad2int",
+        "format": "integer",
+        "encoding": "bit"
+      },
+      {
+        "name": "id.orig_p",
+        "format": "integer",
+        "encoding": "word_port"
+      },
+      {
+        "name": "id.resp_h",
+        "parse": "ip_quad2int",
+        "format": "integer",
+        "abnormal": true,
+        "encoding": "bit"
+      },
+      {
+        "name": "id.resp_p",
+        "format": "integer",
+        "encoding": "word_port"
+      }
+    ],
+    "timeseries": [
+      {
+        "name": "func",
+        "parse": "modbus_func2code",
+        "format": "integer",
+        "encoding": "categorical"
+      }
+    ]
+  }
+}
