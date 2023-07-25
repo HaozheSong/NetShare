@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+service Task{
+    rpc StartTask(stream StartingTask) returns(StartingStatus){}
+    rpc QueryStatus(RunningTask) returns(RunningStatus){}
+    rpc GetResult(CompletedTask) returns(stream ResultFile){}
+}
+
+message StartingTask {
+    int64 task_id = 1;
+    string task_kind = 2;
+    string created_at = 3;
+    string dataset_file_name = 4;
+    bytes dataset_file_content = 5;
+    string config_file_name = 6;
+    bytes config_file_content = 7;
+}
+
+message StartingStatus {
+    int64 task_id = 1;
+    string task_name = 2;
+    bool is_successful = 3;
+}
+
+message RunningTask{
+    int64 task_id = 1;
+    string task_name = 2;
+}
+
+message RunningStatus{
+    int64 task_id = 1;
+    string task_name = 2;
+    bool is_completed = 3;
+    string log_file_name = 4;
+    string log_file_content = 5;
+}
+
+message CompletedTask{
+    int64 task_id = 1;
+    string task_name = 2;
+}
+
+message ResultFile{
+    string file_name = 1;
+    bytes file_content = 2;
+}

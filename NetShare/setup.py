@@ -42,6 +42,7 @@ setup(
         "addict",
         "config_io==0.4.0",
         "flask",
+        'grpcio-tools'
     ],  # add any additional packages that
     # needs to be installed along with your package. Eg: 'caer'
     keywords=["python", "netshare"],
