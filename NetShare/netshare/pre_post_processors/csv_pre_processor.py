@@ -22,60 +22,36 @@ class csv_pre_processor(object):
 
 
     def create_configuration_file(self):
-        ##1. Open the default config file 
         with open(self.input_field_configs, 'r') as openfile:
             json_object = json.load(openfile)
         openfile.close()
         for field in ["metadata", "timeseries", "timestamp"]: 
             for col in json_object["fields"][field]: 
-                name = col["name"]
-                format = col["format"]
-                encoding = col["encoding"]
-                if "type" in col:
-                    type = col["type"]
-                else:
-                    type = None 
-                if "names" in col:
-                    names = col["names"]
-                else:
-                    names = None
-                if "delimiter" in col:
-                    delimiter = col["delimiter"]
-                else:
-                    delimiter = None
-                if "time_format" in col: 
-                    time_format = col["time_format"]
-                else: 
-                    time_format = None
-                if "normalization" in col:
-                    normalization = col["normalization"]
-                else: 
-                    normalization = None
-
-                res = self.create_json_obj(json_object, field, name, format, encoding, type, names, delimiter, time_format, 
-                                            normalization)
+                params = {}
+                for k, v in col.items():
+                    params[k] = v 
+                res = self.create_json_obj(json_object, field, params)
                 if res == False: 
-                    col_info = {"name": name, "fields": field}
+                    col_info = {"name": params["name"], "fields": field}
                     self.deleted_columns.append(col_info)
-        
         json_object["global_config"]["original_data_file"] = str(self.output_path)
-
-        #3. Serializing json
         json_object = json.dumps(json_object, indent=4)
-        
-
-        #4. Writing to sample.json
         with open(self.output_config, "w") as outfile:
             outfile.write(json_object)
 
-    def get_obj(self, column, encoding):
+    def get_obj(self, column, encoding, params):
         if encoding == "bit":
+            n_bits,  categorical_mapping = 32, False
+            if "n_bits" in params: 
+                n_bits = params["n_bits"]
+            if "categorical_mapping" in params: 
+                categorical_mapping = params["categorical_mapping"]
             obj = {
                     "column": column, 
                     "type": "integer", 
                     "encoding": "bit", 
-                    "n_bits": 32,
-                    "categorical_mapping": False
+                    "n_bits": n_bits,
+                    "categorical_mapping": categorical_mapping
                     } 
         elif encoding == "word_proto": 
             obj = {
@@ -90,18 +66,28 @@ class csv_pre_processor(object):
                 "encoding": "categorical"
             }
         elif encoding == "float":
+            normalization,  log1p_norm = "ZERO_ONE", True
+            if "normalization" in params: 
+                normalization = params["normalization"]
+            if "log1p_norm" in params: 
+                log1p_norm = params["log1p_norm"]
             obj =  {
                     "column": column,
                     "type": "float",
-                    "normalization": "ZERO_ONE",
-                    "log1p_norm": True
+                    "normalization": normalization,
+                    "log1p_norm": log1p_norm
                 }
         elif encoding == "timestamp":
+            normalization,  generation = "ZERO_ONE", True
+            if "normalization" in params: 
+                normalization = params["normalization"]
+            if "generation" in params: 
+                generation = params["generation"]
             obj = {
                     "column": column,
-                    "generation": True,
+                    "generation": generation,
                     "encoding": "interarrival",
-                    "normalization": "ZERO_ONE"
+                    "normalization": normalization
                 } 
         else: 
             obj = {
@@ -111,20 +97,30 @@ class csv_pre_processor(object):
                 }
         return obj
 
-    def create_json_obj(self, json_object, Fields, column, format, encoding, type, names, delimiter, time_format, 
-                        normalization):
+    def judge_para_exist(self, col_name, params):
+        if col_name in params:
+            return params[col_name]
+        else:
+            return None
+        
+    def create_json_obj(self, json_object, Fields, params):
         # Fields: "metadata", "timestamp", "timeseries"
         # column: column name in dataset 
         # format: data format {integer, float, string, timestamp, IP, list}
         # encoding: {bit, word_port, word_proto, float, list_attribute, list_value}
         # type: None or specific value for IP or timestamp (IP: IPv4, IPv6 Timestamp: processed, unprocessed)
-        # names: values in the list         
+        # names: values in the list 
+        column, format, encoding = params["name"], params["format"], params["encoding"]
+        type = self.judge_para_exist("type", params)
+        names = self.judge_para_exist("names", params)
+        delimiter = self.judge_para_exist("delimiter", params)
+        time_format = self.judge_para_exist("time_format", params) 
         if format == "integer":
             ## format is integer: encoding will include { bit, word_proto, word_port, categorical }
             if self.df.dtypes[column] == object: 
                 print('Column ', column,' may not be integer, so we ignore it.')
                 return False
-            obj = self.get_obj(column, encoding)
+            obj = self.get_obj(column, encoding, params)
             self.fields.append(column)
             json_object["pre_post_processor"]["config"][Fields].append(obj)
         elif format == "string":
@@ -132,12 +128,12 @@ class csv_pre_processor(object):
             if self.df.dtypes[column] != object: 
                 print('Column ', column,' may not be string, so we ignore it.')
                 return False
-            obj = self.get_obj(column, encoding)
+            obj = self.get_obj(column, encoding, params)
             self.fields.append(column)
             json_object["pre_post_processor"]["config"][Fields].append(obj)
         elif format == "float":
         ## format is string: encoding will include { float }
-            obj = self.get_obj(column, encoding)
+            obj = self.get_obj(column, encoding, params)
             self.fields.append(column)
             json_object["pre_post_processor"]["config"][Fields].append(obj)
         elif format == "timestamp":
@@ -146,7 +142,7 @@ class csv_pre_processor(object):
                 self.changed_columns[column] = {}
                 self.changed_columns[column]["encoding"] = "timestamp"
                 self.changed_columns[column]["time_format"] = time_format
-             obj = self.get_obj(column, "timestamp")
+             obj = self.get_obj(column, "timestamp", params)
              self.fields.append(column)
              json_object["pre_post_processor"]["config"][Fields] = (obj)
         elif format == "IP":
@@ -159,7 +155,7 @@ class csv_pre_processor(object):
              else: 
                   self.special_fields[column] = "IPv6"
                   self.changed_columns[column] = "IPv6"
-             obj = self.get_obj(column, "bit")
+             obj = self.get_obj(column, "bit", params)
              self.fields.append(column)
              json_object["pre_post_processor"]["config"][Fields].append(obj)
         elif format == "list":
@@ -168,7 +164,7 @@ class csv_pre_processor(object):
             if encoding == "list_attributes": 
                 for name in names: 
                     ## special_fields = {"packet__layers": "list__attributes", "IP__src_s": "IPv4"}
-                    obj = self.get_obj(column + "_" + name, "categorical")
+                    obj = self.get_obj(column + "_" + name, "categorical", params)
                     self.fields.append(column + "_" + name)
                     json_object["pre_post_processor"]["config"][Fields].append(obj)
                     self.name_lists[column].append(name)
@@ -185,7 +181,7 @@ class csv_pre_processor(object):
                 for name, encoding in names.items():
                     self.fields.append(column + "_" + name)
                     self.name_lists[column].append(name)
-                    obj = self.get_obj(column + "_" + name, encoding)
+                    obj = self.get_obj(column + "_" + name, encoding, params)
                     if column not in self.changed_columns:
                         self.changed_columns[column] = {}
                         self.changed_columns[column]["encoding"] = "list_values"
@@ -217,7 +213,6 @@ class csv_pre_processor(object):
                                 else: 
                                     self.df.loc[i, new_col] = 0
                             else: 
-                                print("origin string is ", origin_strings)
                                 match = re.search(attrs["origin"], origin_strings)
                                 strs = origin_strings[match.end() + 1:].split(delimiter)[1].strip(' ')
                                 if strs == "":
@@ -250,7 +245,6 @@ class csv_pre_processor(object):
                 elif encoding == "IPv4" or encoding == "IPv6":
                     self.convert_IP_to_int(i, self.df.loc[i, col], col, encoding)
                 else: 
-                    ## timestamp 
                     time_format = self.changed_columns[col]["time_format"]
                     self.convert_time_to_ns(i, col, time_format)
         
@@ -266,7 +260,6 @@ class csv_pre_processor(object):
 
     def convert_time_to_ns(self, i, col, time_format):
         datetime_str = self.df.loc[i, col]
-        ##'%Y-%m-%d %H:%M:%S.%f'
         strs = datetime.strptime(datetime_str, time_format)
         date64 = np.datetime64(strs)
         ts = (date64 - np.datetime64('1970-01-01T00:00:00Z')) / np.timedelta64(1, 's') * 100000 
@@ -274,7 +267,7 @@ class csv_pre_processor(object):
         self.df.loc[i, col] = ts
 
 
-    ##check if one column in df exists -1 or NaN. if exists, then add to abnormal column list
+    ## check if one column in df exists -1 or NaN. if exists, then add to abnormal column list
     def detect_abnormal_value(self):
         abnormal_col_lists = []
         col_lists = list(self.df.columns.values)
@@ -292,9 +285,7 @@ class csv_pre_processor(object):
     def processor(self):
         self.create_configuration_file()
         self.handle_special_fields()
-
         abnormal_lists = self.detect_abnormal_value() 
-        print("abnormal lists are ", abnormal_lists)
         self.change_abnormal_value(abnormal_lists)
         for col, v in self.special_fields.items():
             if v == "IPv4" or v == "IPv6" or v == "timestamp":
@@ -303,24 +294,14 @@ class csv_pre_processor(object):
                 for new_col, attrs in self.changed_columns[col]["new_columns"].items():
                     if attrs["encoding"] == "bit":
                         self.df[new_col] = self.df[new_col].astype(int)
-
         self.df = self.df[[i for i in self.fields]]
-        
-
         with open(self.input_field_configs) as json_file:
             data = json.load(json_file)
         data['changed_fields'] = self.changed_columns
-
         for col in self.deleted_columns:
             for element in data["fields"][col['fields']]: 
                 if element["name"] == col["name"]:
                     data["fields"][col['fields']].remove(element)
-
         with open(self.input_field_configs, 'w') as json_file:
             json.dump(data, json_file)
-
         self.df.to_csv(self.output_path, index = False)
-            
-
-
-    
