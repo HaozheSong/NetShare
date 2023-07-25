@@ -5,8 +5,8 @@ import json
 import netshare.ray as ray
 from netshare import Generator
 
-from zeek_processor import parse2csv
-from pre_post_processor_mixed import pre_processor, post_processor
+from netshare.pre_post_processors import parse_to_csv
+from netshare.pre_post_processors import csv_pre_processor, csv_post_processor
 
 
 class Driver:
@@ -75,22 +75,38 @@ class Driver:
         )
         # preprocess dataset and config.json
         if self.config['processors']['zeek']:
-            parse2csv.parse_to_csv(
+            zeek_processor = parse_to_csv()
+            zeek_processor.parse_to_csv(
                 config_path=self.preprocessed_config_file,
                 input_path=self.moved_dataset_file,
                 output_path=self.preprocessed_dataset_file
             )
         else:
             self.preprocessed_dataset_file = self.moved_dataset_file
-        if self.config['processors']['bowen']:
-            bowen_preprocessor = pre_processor.Pre_processor(
+        if self.config['processors']['pre_csv']:
+            csv_preprocessor = csv_pre_processor(
                 input_dataset=self.preprocessed_dataset_file,
-                input_default_configs='default.json',
                 input_field_configs=self.preprocessed_config_file,
                 output_dataset=self.preprocessed_dataset_file,
                 output_config=self.preprocessed_config_file
             )
-            bowen_preprocessor.processor()
+            csv_preprocessor.processor()
+
+    def postprocess(self):
+        self.postprocess_dir = self.working_dir.joinpath('post_processed_data')
+        self.postprocess_dir.mkdir(parents=True, exist_ok=True)
+        self.postprocessed_output_file = self.postprocess_dir.joinpath(
+            'final_output.csv'
+        )
+        print("post process output file is ", self.postprocessed_output_file)
+        if self.config['processors']['post_csv']:
+            csv_postprocessor = csv_post_processor(
+                input_path=self.postprocess_dir,
+                output_path=self.postprocessed_output_file,
+                input_config=self.preprocessed_config_file
+            )
+            csv_postprocessor.processor()
+
 
     def run(self, ray_enabled=False, local_web=True):
         """
@@ -112,6 +128,7 @@ class Driver:
         generator = Generator(config=config_file_abs_path)
         generator.train(work_folder=working_dir_abs_path)
         generator.generate(work_folder=working_dir_abs_path)
+        self.postprocess()
         generator.visualize(
             work_folder=working_dir_abs_path,
             local_web=local_web
