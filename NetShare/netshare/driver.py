@@ -10,48 +10,50 @@ from netshare.pre_post_processors import csv_pre_processor, csv_post_processor
 
 
 class Driver:
-    def __init__(self, working_dir_name, dataset_file, config_file):
+    """
+    Path variable naming convention:
+    * <dir_name>_dir -> directory path
+    * <file_name>_file -> file path
+    * <file_name>_fd -> opened file descriptor -> e.g. open(dataset_file) as dataset_fd
+    """
+    # netshare_dir = '.../NetShare'
+    netshare_dir = pathlib.Path(__file__).parents[1]
+    # results_dir = '.../NetShare/results'
+    results_dir = netshare_dir.joinpath('results')
+
+    def __init__(self, working_dir_name, dataset_file, config_file,
+                 overwrite_existing_working_dir=False):
         """
         Arguments:
-        * working_dir_name: create a working folder .../NetShare/results/<working_dir_name> and work there
-        * dataset_file
-        * config_file
-        * src_dir
+        :param working_dir_name: create a working directory `.../NetShare/results/<working_dir_name>` and work there
+        :type working_dir_name: string
 
-        Path variable naming convention:
-        * <dir_name>_dir -> directory path
-        * <file_name>_file -> file path
-        * <file_name>_fd -> opened file descriptor -> e.g. open(dataset_file) as dataset_fd
+        :param dataset_file: a path string to dataset file
+        :type dataset_file: string
+
+        :param config_file: a path string to config.json file
+        :type config_file: string
+
+        :param overwrite_existing_working_dir: `True` to delete old existing working directory and create a new one
+        :type overwrite_existing_working_dir: boolean, default `False`
         """
-        # netshare_dir = '.../NetShare'
-        self.netshare_dir = pathlib.Path(__file__).parents[1]
-        # results_dir = '.../NetShare/results'
-        self.results_dir = self.netshare_dir.joinpath('results')
+
         # working_dir = '.../NetShare/results/<working_dir_name>'
         self.working_dir = self.results_dir.joinpath(working_dir_name)
+        if self.working_dir.is_dir() and overwrite_existing_working_dir:
+            shutil.rmtree(self.working_dir)
         self.working_dir.mkdir(parents=True, exist_ok=True)
-        # src directory stores files uploaded by the user
-        # src_dir = '.../NetShare/results/<working_dir_name>/src'
-        self.src_dir = self.working_dir.joinpath('src')
 
-        if pathlib.Path(dataset_file).is_file():
-            self.dataset_file = pathlib.Path(dataset_file)
-            self.dataset_file_name = self.dataset_file.name
-        else:
-            self.dataset_file_name = dataset_file
-            self.dataset_file = self.src_dir.joinpath(self.dataset_file_name)
+        self.dataset_file = pathlib.Path(dataset_file)
+        self.dataset_file_name = self.dataset_file.name
 
-        if pathlib.Path(config_file).is_file():
-            self.config_file = pathlib.Path(config_file)
-            self.config_file_name = self.config_file.name
-        else:
-            self.config_file_name = config_file
-            self.config_file = self.src_dir.joinpath(self.config_file_name)
+        self.config_file = pathlib.Path(config_file)
+        self.config_file_name = self.config_file.name
         with open(self.config_file) as self.config_fd:
             self.config = json.load(self.config_fd)
 
     def preprocess(self):
-        # copy dataset and user.json
+        # copy dataset and config.json
         self.preprocess_dir = self.working_dir.joinpath('pre_processed_data')
         self.preprocess_dir.mkdir(parents=True, exist_ok=True)
         self.moved_dataset_file = self.preprocess_dir.joinpath(
@@ -71,7 +73,7 @@ class Driver:
             src=self.config_file,
             dst=self.preprocessed_config_file
         )
-        # preprocess dataset and user.json
+        # preprocess dataset and config.json
         if self.config['processors']['zeek']:
             zeek_processor = parse_to_csv()
             zeek_processor.parse_to_csv(
@@ -106,13 +108,20 @@ class Driver:
             csv_postprocessor.processor()
 
 
-    def run(self, config_file=None, ray_enabled=False):
+    def run(self, ray_enabled=False, local_web=True):
+        """
+        Train, generate and visualize. Result json and images will be stored in 
+        `.../NetShare/results/<working_dir_name>/result` which can be visualized by a local website.
+
+        Arguments:
+        :param ray_enabled: `True` to enable Ray
+        :type ray_enabled: boolean
+
+        :param local_web: `True` to visualize results in a local website
+        :type local_web: boolean
+        """
         self.preprocess()
-        if config_file is None:
-            config_file = self.preprocessed_config_file
-        elif isinstance(config_file, str):
-            config_file = pathlib.Path(config_file)
-        config_file_abs_path = str(config_file.resolve())
+        config_file_abs_path = str(self.preprocessed_config_file.resolve())
         working_dir_abs_path = str(self.working_dir.resolve())
         ray.config.enabled = ray_enabled
         ray.init(address="auto")
@@ -120,5 +129,28 @@ class Driver:
         generator.train(work_folder=working_dir_abs_path)
         generator.generate(work_folder=working_dir_abs_path)
         self.postprocess()
-        generator.visualize(work_folder=working_dir_abs_path)
+        generator.visualize(
+            work_folder=working_dir_abs_path,
+            local_web=local_web
+        )
         ray.shutdown()
+
+
+class WebDriver(Driver):
+    def __init__(self, working_dir_name, dataset_file_name, config_file_name):
+        # working_dir = '.../NetShare/results/<working_dir_name>'
+        self.working_dir = self.results_dir.joinpath(working_dir_name)
+        self.working_dir.mkdir(parents=True, exist_ok=True)
+
+        # src_dir stores original dataset and config.json uploaded by the user (only for WebDriver)
+        # src_dir = '.../NetShare/results/<working_dir_name>/src'
+        self.src_dir = self.working_dir.joinpath('src')
+
+        self.dataset_file = self.src_dir.joinpath(dataset_file_name)
+        self.config_file = self.src_dir.joinpath(config_file_name)
+
+        super().__init__(
+            working_dir_name,
+            str(self.dataset_file.resolve()),
+            str(self.config_file.resolve())
+        )

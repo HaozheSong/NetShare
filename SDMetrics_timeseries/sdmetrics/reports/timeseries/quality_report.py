@@ -9,6 +9,8 @@ import dash
 import inspect
 import importlib
 import pprint
+import copy
+import json
 
 
 from dash import dcc, html
@@ -85,6 +87,73 @@ class QualityReport:
 
         app.layout = html.Div(children=html_children)
         app.run_server(debug=False)
+
+    def get_fig_refs(self, dict_var, figs_dict):
+        # ------------------------------depth=2------------------------------
+        # dict_metric_scores = {
+        #     'fidelity': {
+        #         'Single attribute distributional similarity': {
+        #             'srcip': [(score, best, worst), Figure],
+        #             'dstip': [(0.36005828477184515, 0.0, 1.0), Figure],
+        #         },
+        #         'Single feature distributional similarity': {
+        #             'td': [(score, best, worst), Figure],
+        #             'pkt': [(1806.4343452780117, 0.0, inf), Figure],
+        #         }
+        #     }
+        # }
+        # ------------------------------depth=1------------------------------
+        # dict_metric_scores = {
+        #     'fidelity': {
+        #         'srcip': [(score, best, worst), Figure],
+        #         'dstip': [(0.36005828477184515, 0.0, 1.0), Figure],
+        #         'pkt': [(1806.4343452780117, 0.0, inf), Figure],
+        #     }
+        # }
+        for key, value in dict_var.items():
+            if not isinstance(value, list):
+                self.get_fig_refs(value, figs_dict)
+            elif value[1] is not None:
+                figs_dict[key] = value[1]
+
+    def fig2png(self, save_folder):
+        figs_dict = {}
+        self.get_fig_refs(self.dict_metric_scores, figs_dict)
+        os.makedirs(save_folder, exist_ok=True)
+        for fig_name, fig_obj in figs_dict.items():
+            img_bytes = fig_obj.to_image(format='png')
+            save_path = os.path.join(save_folder, fig_name + '.png')
+            with open(save_path, 'wb') as img_file:
+                img_file.write(img_bytes)
+
+    def fig2json(self, save_folder, pretty=True, remove_uids=False):
+        figs_dict = {}
+        self.get_fig_refs(self.dict_metric_scores, figs_dict)
+        os.makedirs(save_folder, exist_ok=True)
+        for fig_name, fig_obj in figs_dict.items():
+            json_str = fig_obj.to_json(pretty=pretty, remove_uids=remove_uids)
+            save_path = os.path.join(save_folder, fig_name + '.json')
+            with open(save_path, 'w') as json_file:
+                json_file.write(json_str)
+
+    def save_result_as_json(self, save_folder):
+        # 'srcip': [(score, best, worst), Figure] -> 'srcip': (score, best, worst)
+        def delete_fig_objs(dict_var):
+            for key, value in dict_var.items():
+                if not isinstance(value, list):
+                    delete_fig_objs(dict_var[key])
+                else:
+                    dict_var[key] = {
+                        'scores': [str(v) for v in value[0]],
+                        'figure': f'{key}.png' if value[1] is not None else None
+                    }
+        metrics_copy = copy.deepcopy(self.dict_metric_scores)
+        delete_fig_objs(metrics_copy)
+
+        os.makedirs(save_folder, exist_ok=True)
+        save_path = os.path.join(save_folder, 'result.json')
+        with open(save_path, 'w') as json_file:
+            json.dump(metrics_copy, json_file)
 
     def generate(self, real_data, synthetic_data, metadata, out=sys.stdout):
         self.dict_metric_scores = OrderedDict()

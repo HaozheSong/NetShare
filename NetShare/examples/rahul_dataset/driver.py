@@ -43,6 +43,7 @@ from netshare.driver import Driver
 
 driver = Driver(
     working_dir_name='rahul-dataset',
+    overwrite_existing_working_dir=True,
     dataset_file='rahul.csv',
     config_file='config.json',
 )
