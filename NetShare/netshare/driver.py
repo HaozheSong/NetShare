@@ -62,12 +62,23 @@ class Driver:
         self.ray_enabled = ray_enabled
         self.local_web = local_web
         self.local_web_port = local_web_port
+        self.redirect_stdout_stderr = redirect_stdout_stderr
+        self.separate_stdout_stderr_log = separate_stdout_stderr_log
 
         # working_dir = '.../NetShare/results/<working_dir_name>'
         self.working_dir = self.results_dir.joinpath(working_dir_name)
         if self.working_dir.is_dir() and overwrite_existing_working_dir:
             shutil.rmtree(self.working_dir)
         self.working_dir.mkdir(parents=True, exist_ok=True)
+
+        self.dataset_file = pathlib.Path(dataset_file)
+        self.dataset_file_name = self.dataset_file.name
+
+        self.config_file = pathlib.Path(config_file)
+        self.config_file_name = self.config_file.name
+
+        # result_dir = '.../NetShare/results/<working_dir_name>/result
+        self.result_dir = self.working_dir.joinpath('result')
 
         # logs_dir = '.../NetShare/results/<working_dir_name>/logs'
         self.logs_dir = self.working_dir.joinpath('logs')
@@ -76,26 +87,17 @@ class Driver:
         self.stdout_stderr_log_file = self.logs_dir.joinpath(
             'stdout_stderr.log'
         )
+        if redirect_stdout_stderr and not separate_stdout_stderr_log:
+            with open(self.stdout_stderr_log_file, 'w'):
+                pass
         # stdout_log_file = '.../NetShare/results/<working_dir_name>/logs/stdout.log
         self.stdout_log_file = self.logs_dir.joinpath('stdout.log')
         # stderr_log_file = '.../NetShare/results/<working_dir_name>/logs/stderr.log
         self.stderr_log_file = self.logs_dir.joinpath('stderr.log')
-        if redirect_stdout_stderr:
-            if separate_stdout_stderr_log:
-                sys.stdout = open(self.stdout_log_file, 'w')
-                sys.stderr = open(self.stderr_log_file, 'w')
-            else:
-                stdout_stderr_log_fd = open(self.stdout_stderr_log_file, 'w')
-                sys.stdout = stdout_stderr_log_fd
-                sys.stderr = stdout_stderr_log_fd
-
-        self.dataset_file = pathlib.Path(dataset_file)
-        self.dataset_file_name = self.dataset_file.name
-
-        self.config_file = pathlib.Path(config_file)
-        self.config_file_name = self.config_file.name
-        with open(self.config_file) as self.config_fd:
-            self.config = json.load(self.config_fd)
+        if redirect_stdout_stderr and separate_stdout_stderr_log:
+            with open(self.stdout_log_file, 'w'):
+                with open(self.stderr_log_file, 'w'):
+                    pass
 
     def preprocess(self):
         # copy dataset and config.json
@@ -119,6 +121,8 @@ class Driver:
             dst=self.preprocessed_config_file
         )
         # preprocess dataset and config.json
+        with open(self.config_file) as self.config_fd:
+            self.config = json.load(self.config_fd)
         if self.config['processors']['zeek']:
             zeek_processor = parse_to_csv()
             zeek_processor.parse_to_csv(
@@ -152,8 +156,15 @@ class Driver:
             )
             csv_postprocessor.processor()
 
-
     def run(self):
+        if self.redirect_stdout_stderr:
+            if self.separate_stdout_stderr_log:
+                sys.stdout = open(self.stdout_log_file, 'w')
+                sys.stderr = open(self.stderr_log_file, 'w')
+            else:
+                stdout_stderr_log_fd = open(self.stdout_stderr_log_file, 'w')
+                sys.stdout = stdout_stderr_log_fd
+                sys.stderr = stdout_stderr_log_fd
         self.preprocess()
         config_file_abs_path = str(self.preprocessed_config_file.resolve())
         working_dir_abs_path = str(self.working_dir.resolve())
@@ -171,5 +182,5 @@ class Driver:
         ray.shutdown()
 
     def run_in_a_process(self):
-        process = Process(target=self.run)
-        process.start()
+        self.process = Process(target=self.run)
+        self.process.start()
