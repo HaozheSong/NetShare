@@ -7,8 +7,8 @@ from multiprocessing import Process
 import netshare.ray as ray
 from netshare import Generator
 
-from netshare.pre_post_processors import Stage1Preprocessor
-from netshare.pre_post_processors import csv_pre_processor, csv_post_processor
+import netshare.pre_post_processors as pre_post_processors
+from netshare.pre_post_processors import csv_post_processor
 
 
 class Driver:
@@ -123,23 +123,27 @@ class Driver:
         # preprocess dataset and config.json
         with open(self.config_file) as self.config_fd:
             self.config = json.load(self.config_fd)
-        if self.config['processors']['zeek']:
-            zeek_processor = Stage1Preprocessor()
-            zeek_processor.parse_to_csv(
-                config_path=self.preprocessed_config_file,
-                input_path=self.moved_dataset_file,
-                output_path=self.preprocessed_dataset_file
+
+        input_dataset_path = self.moved_dataset_file
+        output_dataset_path = self.preprocessed_dataset_file
+        input_config_path = self.preprocessed_config_file
+        output_config_path = self.preprocessed_config_file
+
+        preprocessor_list = self.config['processors']['preprocessors']
+        for p in preprocessor_list:
+            print(p)
+            preprocessor_class = getattr(pre_post_processors, p)
+            preprocessor = preprocessor_class(
+                input_dataset_path=input_dataset_path,
+                output_dataset_path=output_dataset_path,
+                input_config_path=input_config_path,
+                output_config_path=output_config_path
             )
-        else:
-            self.preprocessed_dataset_file = self.moved_dataset_file
-        if self.config['processors']['pre_csv']:
-            csv_preprocessor = csv_pre_processor(
-                input_dataset=self.preprocessed_dataset_file,
-                input_field_configs=self.preprocessed_config_file,
-                output_dataset=self.preprocessed_dataset_file,
-                output_config=self.preprocessed_config_file
-            )
-            csv_preprocessor.processor()
+            preprocessor.preprocess()
+
+            input_dataset_path = output_dataset_path
+            input_config_path = output_config_path
+            self.preprocessed_config_file = output_config_path
 
     def postprocess(self):
         self.postprocess_dir = self.working_dir.joinpath('post_processed_data')

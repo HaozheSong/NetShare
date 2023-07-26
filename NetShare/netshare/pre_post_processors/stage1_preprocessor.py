@@ -1,12 +1,23 @@
 import json
+import shutil
+
 import pandas as pd
 from . import parse_func
+from .preprocessor import Preprocessor
 import os
 
 
-class Stage1Preprocessor(object):
-    def __init__(self):
-        self.result = pd.DataFrame({})
+class Stage1Preprocessor(Preprocessor):
+    def __init__(self, input_dataset_path, output_dataset_path, input_config_path, output_config_path):
+        """
+        Initiate a stage 1 preprocessor.
+        :param input_dataset_path: Path to the input dataset file.
+        :param output_dataset_path: Path to the output dataset file.
+        :param input_config_path: Path to the input configuration file.
+        :param output_config_path: Path to the output configuration file.
+        """
+        super().__init__(input_dataset_path, output_dataset_path, input_config_path, output_config_path)
+        self._result = pd.DataFrame({})
 
     @staticmethod
     def parse_format(field_format):
@@ -82,21 +93,22 @@ class Stage1Preprocessor(object):
                 line = input_file.readline()
         return pd.DataFrame(data)
 
-    def parse_to_csv(self, config_path, input_path, output_path='./result.csv'):
-        """
-        Parse an input file to csv file according to a configuration file.
-        :param config_path: Path to the configuration file.
-        :param input_path: Path to the input file.
-        :param output_path: Path to the output csv file.
-        """
-        with open(config_path, 'r') as openfile:
-            config = json.load(openfile)
-        input_config = config['input_file']
+    def _preprocess(self):
+        with open(self._input_config_path, 'r') as input_config_file:
+            config = json.load(input_config_file)
         fields_configs = config['fields']
         fields = Stage1Preprocessor.get_fields(fields_configs)
 
-        df = Stage1Preprocessor.to_dataframe(input_path, input_config)
-        Stage1Preprocessor.parse_field(fields, df, self.result)
+        input_config = config['input_file']
+        df = Stage1Preprocessor.to_dataframe(self._input_dataset_path, input_config)
+        Stage1Preprocessor.parse_field(fields, df, self._result)
 
-        os.makedirs(os.path.dirname(output_path), exist_ok=True)
-        self.result.to_csv(output_path, index=True)
+        os.makedirs(os.path.dirname(self._output_dataset_path), exist_ok=True)
+        self._result.to_csv(self._output_dataset_path, index=True)
+
+        # Copy config file
+        if self._output_config_path != self._input_config_path:
+            shutil.copy2(
+                src=self._input_config_path,
+                dst=self._output_config_path
+            )

@@ -1,7 +1,9 @@
 {
   "processors": {
-    "zeek": true,
-    "pre_csv": true,
+    "preprocessors": [
+      "Stage1Preprocessor",
+      "csv_pre_processor"
+    ],
     "post_csv": true
   },
   "input_file": {
@@ -32,8 +34,6 @@
     "config": {
       "batch_size": 100,
       "sample_len": [
-        1,
-        5,
         10
       ],
       "sample_len_expand": true,
