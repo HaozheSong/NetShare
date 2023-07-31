@@ -6,25 +6,26 @@ from datetime import datetime
 import glob 
 import json 
 import ipaddress
+from .postprocessor import Postprocessor
 pd.set_option('display.max_columns', None)
 
 
-class csv_post_processor(object):
-    def __init__(self, input_path, output_path, input_config):
-        self.input_path = input_path
-        self.output_path = output_path 
+class csv_post_processor(Postprocessor):
+    def __init__(self, input_dataset_path, output_dataset_path, input_config_path):
+        super().__init__(input_dataset_path, output_dataset_path, input_config_path)
+        self.input_path = input_dataset_path
+        self.output_path = output_dataset_path
         self.metadata = []
-        with open(input_config) as json_file:
+        with open(input_config_path) as json_file:
             json_object = json.load(json_file)
             self.changed_fields = json_object["changed_fields"]
             self.columns = []
-            for col in json_object["fields"]["metadata"]:
-                self.columns.append(col["name"])
-                self.metadata.append(col["name"])
-            for col in json_object["fields"]["timeseries"]:
-                self.columns.append(col["name"])
-            for col in json_object["fields"]["timestamp"]:
-                self.columns.append(col["name"])
+            for item in json_object["pre_post_processor"]["config"]["metadata"]:
+                self.columns.append(item["column"])
+                self.metadata.append(item["column"])
+            for item in json_object["pre_post_processor"]["config"]["timeseries"]:
+                self.columns.append(item["column"])
+            self.columns.append(json_object["pre_post_processor"]["config"]["timestamp"]["column"])
         filenames = glob.glob(str(self.input_path) + "/*.csv")
         self.df = pd.read_csv(filenames[0]) 
 
@@ -42,7 +43,6 @@ class csv_post_processor(object):
     def convert_ns_to_time(self, i, colname, time_format):
         ts = self.df.loc[i, colname] 
         date64 = (ts / 100000) * np.timedelta64(1, 's') + np.datetime64('1970-01-01T00:00:00Z')
-        ##%Y-%m-%d %H:%M:%S.%f
         datetime = date64.item().strftime(time_format)
         self.df.loc[i, colname] = datetime
 
@@ -51,9 +51,8 @@ class csv_post_processor(object):
         s = self.df.duplicated(self.metadata)
         self.df["flow_id"] = (~s).cumsum()
         
-            
-
-    def processor(self):
+    def _postprocess(self):
+        self.generate_flow_id()
         for col, encoding in self.changed_fields.items():
             if encoding == "IPv4" or encoding == "IPv6": 
                 for i in range(len(self.df.index)):
@@ -89,9 +88,4 @@ class csv_post_processor(object):
                         final_string = "\n".join(string_lists)
                         self.df.loc[i, col] = final_string
                     self.df = self.df.drop(columns = cols)
-        
-        #self.df = self.df[self.columns]
-        self.generate_flow_id()
-        print("Write the final output file: ")
-        print("output path is ", self.output_path)
         self.df.to_csv(self.output_path, index = False)

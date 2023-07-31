@@ -4,7 +4,9 @@
       "Stage1Preprocessor",
       "csv_pre_processor"
     ],
-    "post_csv": true
+    "postprocessors": [
+      "csv_post_processor"
+    ]
   },
   "input_file": {
     "format": "zeek_log_json"
