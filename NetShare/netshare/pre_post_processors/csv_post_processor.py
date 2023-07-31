@@ -20,13 +20,12 @@ class csv_post_processor(Postprocessor):
             json_object = json.load(json_file)
             self.changed_fields = json_object["changed_fields"]
             self.columns = []
-            for col in json_object["fields"]["metadata"]:
-                self.columns.append(col["name"])
-                self.metadata.append(col["name"])
-            for col in json_object["fields"]["timeseries"]:
-                self.columns.append(col["name"])
-            for col in json_object["fields"]["timestamp"]:
-                self.columns.append(col["name"])
+            for item in json_object["pre_post_processor"]["config"]["metadata"]:
+                self.columns.append(item["column"])
+                self.metadata.append(item["column"])
+            for item in json_object["pre_post_processor"]["config"]["timeseries"]:
+                self.columns.append(item["column"])
+            self.columns.append(json_object["pre_post_processor"]["config"]["timestamp"]["column"])
         filenames = glob.glob(str(self.input_path) + "/*.csv")
         self.df = pd.read_csv(filenames[0]) 
 
@@ -53,6 +52,7 @@ class csv_post_processor(Postprocessor):
         self.df["flow_id"] = (~s).cumsum()
         
     def _postprocess(self):
+        self.generate_flow_id()
         for col, encoding in self.changed_fields.items():
             if encoding == "IPv4" or encoding == "IPv6": 
                 for i in range(len(self.df.index)):
@@ -88,5 +88,4 @@ class csv_post_processor(Postprocessor):
                         final_string = "\n".join(string_lists)
                         self.df.loc[i, col] = final_string
                     self.df = self.df.drop(columns = cols)
-        self.generate_flow_id()
         self.df.to_csv(self.output_path, index = False)

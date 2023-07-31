@@ -176,7 +176,9 @@ class Driver:
                 sys.stdout = stdout_stderr_log_fd
                 sys.stderr = stdout_stderr_log_fd
         self.preprocess()
+        print("config_file is", self.preprocessed_config_file)
         config_file_abs_path = str(self.preprocessed_config_file.resolve())
+        print("config_file_abs_path is", config_file_abs_path)
         working_dir_abs_path = str(self.working_dir.resolve())
         ray.config.enabled = self.ray_enabled
         ray.init(address="auto")
