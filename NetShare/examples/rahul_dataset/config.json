@@ -1,7 +1,7 @@
 {
   "processors": {
     "preprocessors": [
-      "Stage1Preprocessor",
+      "CustomizableFormatPreprocessor",
       "csv_pre_processor"
     ],
     "postprocessors": [

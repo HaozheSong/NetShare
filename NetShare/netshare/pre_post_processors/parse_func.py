@@ -55,6 +55,8 @@ def modbus_func2code(func_name):
     :param func_name: Modbus function name
     :return: Corresponding modbus function code
     """
+    if isinstance(func_name, int) or func_name.isdigit():
+        return func_name
     if func_name == 'READ_COILS':
         return 1
     elif func_name == 'READ_DISCRETE_INPUTS':
@@ -69,6 +71,92 @@ def modbus_func2code(func_name):
         return 6
     else:
         return 0
+
+
+def syslog_facility2code(facility_name):
+    """
+    :param facility_name: Syslog facility name
+    :return: Corresponding syslog facility code
+    """
+    if isinstance(facility_name, int) or facility_name.isdigit():
+        return facility_name
+    if facility_name == 'KERN':
+        return 0
+    elif facility_name == 'USER':
+        return 1
+    elif facility_name == 'MAIL':
+        return 2
+    elif facility_name == 'DAEMON':
+        return 3
+    elif facility_name == 'AUTH':
+        return 4
+    elif facility_name == 'SYSLOG':
+        return 5
+    elif facility_name == 'LPR':
+        return 6
+    elif facility_name == 'NEWS':
+        return 7
+    elif facility_name == 'UUCP':
+        return 8
+    elif facility_name == 'CRON':
+        return 9
+    elif facility_name == 'AUTHPRIV':
+        return 10
+    elif facility_name == 'FTP':
+        return 11
+    elif facility_name == 'NTP':
+        return 12
+    elif facility_name == 'AUDIT':
+        return 13
+    elif facility_name == 'ALERT':
+        return 14
+    elif facility_name == 'CLOCK':
+        return 15
+    elif facility_name == 'LOCAL0':
+        return 16
+    elif facility_name == 'LOCAL1':
+        return 17
+    elif facility_name == 'LOCAL2':
+        return 18
+    elif facility_name == 'LOCAL3':
+        return 19
+    elif facility_name == 'LOCAL4':
+        return 20
+    elif facility_name == 'LOCAL5':
+        return 21
+    elif facility_name == 'LOCAL6':
+        return 22
+    elif facility_name == 'LOCAL7':
+        return 23
+    else:
+        return 24
+
+
+def syslog_severity2code(severity_name):
+    """
+    :param severity_name: Syslog severity name
+    :return: Corresponding syslog severity code
+    """
+    if isinstance(severity_name, int) or severity_name.isdigit():
+        return severity_name
+    if severity_name == 'EMERGENCY':
+        return 0
+    elif severity_name == 'ALERT':
+        return 1
+    elif severity_name == 'CRITICAL':
+        return 2
+    elif severity_name == 'ERROR':
+        return 3
+    elif severity_name == 'WARNING':
+        return 4
+    elif severity_name == 'NOTICE':
+        return 5
+    elif severity_name == 'INFORMATIONAL':
+        return 6
+    elif severity_name == 'DEBUG':
+        return 7
+    else:
+        return 8
 
 
 def handle_abnormal(value, field):
