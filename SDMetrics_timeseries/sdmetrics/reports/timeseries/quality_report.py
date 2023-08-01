@@ -145,7 +145,8 @@ class QualityReport:
                 else:
                     dict_var[key] = {
                         'scores': [str(v) for v in value[0]],
-                        'figure': f'{key}.png' if value[1] is not None else None
+                        'figure': f'{key}.png' if value[1] is not None else None,
+                        'figure_plotly_json': f'{key}.json' if value[1] is not None else None
                     }
         metrics_copy = copy.deepcopy(self.dict_metric_scores)
         delete_fig_objs(metrics_copy)
