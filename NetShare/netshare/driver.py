@@ -166,7 +166,7 @@ class Driver:
             )
             postprocessor.postprocess()
 
-    def run(self):
+    def run(self, post_hook=None):
         if self.redirect_stdout_stderr:
             if self.separate_stdout_stderr_log:
                 sys.stdout = open(self.stdout_log_file, 'w')
@@ -192,7 +192,9 @@ class Driver:
             local_web_port=self.local_web_port
         )
         ray.shutdown()
+        if (callable(post_hook)):
+            post_hook()
 
-    def run_in_a_process(self):
-        self.process = Process(target=self.run)
+    def run_in_a_process(self, args=None):
+        self.process = Process(target=self.run, args=args)
         self.process.start()

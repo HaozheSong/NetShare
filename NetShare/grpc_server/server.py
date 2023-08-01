@@ -19,6 +19,7 @@ class TaskServicer(task_pb2_grpc.TaskServicer):
                 working_dir_name = f'{request.task_id}_{request.task_kind}_{request.created_at}'
                 task_name = working_dir_name
                 task = GrpcDriver(
+                    task_id=request.task_id,
                     working_dir_name=working_dir_name,
                     dataset_file_name=request.dataset_file_name,
                     config_file_name=request.config_file_name

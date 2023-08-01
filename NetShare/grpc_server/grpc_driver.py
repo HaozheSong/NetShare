@@ -1,8 +1,12 @@
+import json
+import urllib
+
 from netshare.driver import Driver
 
 
 class GrpcDriver(Driver):
-    def __init__(self, working_dir_name, dataset_file_name, config_file_name):
+    def __init__(self, task_id, working_dir_name, dataset_file_name, config_file_name):
+        self.task_id = task_id
         # working_dir = '.../NetShare/results/<working_dir_name>'
         self.working_dir = self.results_dir.joinpath(working_dir_name)
         self.working_dir.mkdir(parents=True, exist_ok=True)
@@ -31,3 +35,24 @@ class GrpcDriver(Driver):
         with open(self.stdout_stderr_log_file) as log_fd:
             log_content = log_fd.read()
         return {'log_file_name': self.stdout_stderr_log_file.name, 'log_file_content': log_content}
+
+    def notify_completion(self):
+        completed_status = {
+            'task_id': self.task_id,
+            'is_completed': True,
+        }
+        json_data = json.dumps(completed_status)
+        put_json_request = urllib.request.Request(
+            url=f'http://localhost:8000/api/task/update/',
+            method='PUT',
+            headers={'Content-Type': 'application/json'},
+            data=json_data.encode()
+        )
+        max_attempts = 3
+        for _ in range(max_attempts):
+            with urllib.request.urlopen(put_json_request) as response:
+                if response.read().decode() == 'success':
+                    return
+
+    def run_in_a_process(self):
+        super().run_in_a_process(args=(self.notify_completion,))
