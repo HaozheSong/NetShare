@@ -36,10 +36,12 @@
     "config": {
       "batch_size": 100,
       "sample_len": [
+        1,
+        5,
         10
       ],
       "sample_len_expand": true,
-      "epochs": 5,
+      "epochs": 60,
       "extra_checkpoint_freq": 1,
       "epoch_checkpoint_freq": 5
     }
@@ -80,8 +82,14 @@
     ],
     "timeseries": [
       {
-        "name": "func",
-        "parse": "modbus_func2code",
+        "name": "facility",
+        "parse": "syslog_facility2code",
+        "format": "integer",
+        "encoding": "categorical"
+      },
+      {
+        "name": "severity",
+        "parse": "syslog_severity2code",
         "format": "integer",
         "encoding": "categorical"
       }

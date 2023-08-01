@@ -13,29 +13,37 @@ class csv_pre_processor(Preprocessor):
         super().__init__(input_dataset_path, output_dataset_path, input_config_path, output_config_path)
         self.df = pd.read_csv(input_dataset_path, index_col=0)
         ## special fields store list, IP, time columns and its encoding method.
+        self.abnormal_lists = [] 
+        self.abnormal_columns = []
         self.special_fields = {}
         self.changed_columns = {}
         self.fields = []
-        self.deleted_columns = []
         self.name_lists = collections.defaultdict(list)
 
     def create_configuration_file(self):
         with open(self._input_config_path, 'r') as openfile:
             json_object = json.load(openfile)
         openfile.close()
+        self.abnormal_lists = [0, 0.0, -1, "-1", "NaN", "nan"]
+        self.delete_columns = {}
         for field in ["metadata", "timeseries", "timestamp"]:
             for col in json_object["fields"][field]:
                 params = {}
                 for k, v in col.items():
                     params[k] = v
-                res = self.create_json_obj(json_object, field, params)
-                if res == False:
-                    col_info = {"name": params["name"], "fields": field}
-                    self.deleted_columns.append(col_info)
+                res1 = self.detect_abnormal_value(params["name"])
+                if res1 == True:
+                    res2 = self.create_json_obj(json_object, field, params)
+                if res2 == False:
+                    if field not in self.delete_columns:
+                        self.delete_columns[field] = {}
+                    self.delete_columns[field][col["name"]] = col
         json_object["global_config"]["original_data_file"] = str(self._output_dataset_path)
+        json_object.pop("fields")
         json_object = json.dumps(json_object, indent=4)
+        
         with open(self._output_config_path, "w") as outfile:
-            outfile.write(json_object)
+          outfile.write(json_object)
 
     def get_obj(self, column, encoding, params):
         if encoding == "bit":
@@ -185,8 +193,7 @@ class csv_pre_processor(Preprocessor):
                         self.changed_columns[column]["encoding"] = "list_values"
                         self.changed_columns[column]["new_columns"] = {}
                         self.changed_columns[column]["delimiter"] = delimiter
-                    self.changed_columns[column]["new_columns"][column + "_" + name] = {"encoding": encoding,
-                                                                                        "origin": name}
+                    self.changed_columns[column]["new_columns"][column + "_" + name] = {"encoding": encoding, "origin": name}
                     json_object["pre_post_processor"]["config"][Fields].append(obj)
                 self.special_fields[column] = "list_values"
         return True
@@ -263,26 +270,25 @@ class csv_pre_processor(Preprocessor):
         ts = int(ts)
         self.df.loc[i, col] = ts
 
-    ## check if one column in df exists -1 or NaN. if exists, then add to abnormal column list
-    def detect_abnormal_value(self):
-        abnormal_col_lists = []
-        col_lists = list(self.df.columns.values)
-        for col in col_lists:
-            val_lists = self.df[col].tolist()
-            if -1 in val_lists or "-1" in val_lists or self.df[col].isnull().sum() > 0:
-                abnormal_col_lists.append(col)
-        return abnormal_col_lists
+    ## check if one column in df exists -1 or NaN. If all values are abnormal, we delete it, otherwise we change it to 0 
+    def detect_abnormal_value(self, col):
+        if self.df[col].isin(self.abnormal_lists).any():
+            if self.df[col].isin(self.abnormal_lists).all():
+                print("all the values in ", col, " are abnormal, so we delete it")
+                return False
+            else:
+                self.abnormal_columns.append(col)
+        return True
 
-    def change_abnormal_value(self, col_lists):
-        for col in col_lists:
-            self.df[col] = self.df[col].replace(-1, 0)
+    def change_abnormal_value(self):
+        for col in self.abnormal_columns:
+            self.df[col] = self.df[col].replace(self.abnormal_lists, 0)
             self.df[col] = self.df[col].fillna(0)
 
     def _preprocess(self):
         self.create_configuration_file()
         self.handle_special_fields()
-        abnormal_lists = self.detect_abnormal_value()
-        self.change_abnormal_value(abnormal_lists)
+        self.change_abnormal_value()
         for col, v in self.special_fields.items():
             if v == "IPv4" or v == "IPv6" or v == "timestamp":
                 self.df[[col]] = self.df[[col]].apply(pd.to_numeric)
@@ -290,15 +296,20 @@ class csv_pre_processor(Preprocessor):
                 for new_col, attrs in self.changed_columns[col]["new_columns"].items():
                     if attrs["encoding"] == "bit":
                         self.df[new_col] = self.df[new_col].astype(int)
+        print("fields are ", self.fields)
         self.df = self.df[[i for i in self.fields]]
         with open(self._input_config_path) as json_file:
             data = json.load(json_file)
         data['changed_fields'] = self.changed_columns
-        for col in self.deleted_columns:
-            for element in data["fields"][col['fields']]:
-                if element["name"] == col["name"]:
-                    data["fields"][col['fields']].remove(element)
-        with open(self._input_config_path, 'w') as json_file:
+        #for col in self.deleted_columns:
+         #   for element in data["fields"][col['fields']]:
+          #      if element["name"] == col["name"]:
+           #         print("delete col is ", col["name"])
+            #        print(element)
+             #       data["fields"][col['fields']].remove(element)
+        print("data is ")
+        print(data)
+        with open(self._output_config_path, 'w') as json_file:
             json.dump(data, json_file)
         self.df.to_csv(self._output_dataset_path, index=False)
 

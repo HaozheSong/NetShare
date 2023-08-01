@@ -8,7 +8,6 @@ import netshare.ray as ray
 from netshare import Generator
 
 import netshare.pre_post_processors as pre_post_processors
-from netshare.pre_post_processors import csv_post_processor
 
 
 class Driver:
@@ -151,14 +150,21 @@ class Driver:
         self.postprocessed_output_file = self.postprocess_dir.joinpath(
             'final_output.csv'
         )
-        print("post process output file is ", self.postprocessed_output_file)
-        if self.config['processors']['post_csv']:
-            csv_postprocessor = csv_post_processor(
-                input_path=self.postprocess_dir,
-                output_path=self.postprocessed_output_file,
-                input_config=self.preprocessed_config_file
+
+        input_dataset_path = self.postprocess_dir
+        output_dataset_path = self.postprocessed_output_file
+        input_config_path = self.preprocessed_config_file
+
+        postprocessor_list = self.config['processors']['postprocessors']
+        for p in postprocessor_list:
+            print(p)
+            postprocessor_class = getattr(pre_post_processors, p)
+            postprocessor = postprocessor_class(
+                input_dataset_path=input_dataset_path,
+                output_dataset_path=output_dataset_path,
+                input_config_path=input_config_path,
             )
-            csv_postprocessor.processor()
+            postprocessor.postprocess()
 
     def run(self):
         if self.redirect_stdout_stderr:
@@ -170,7 +176,9 @@ class Driver:
                 sys.stdout = stdout_stderr_log_fd
                 sys.stderr = stdout_stderr_log_fd
         self.preprocess()
+        print("config_file is", self.preprocessed_config_file)
         config_file_abs_path = str(self.preprocessed_config_file.resolve())
+        print("config_file_abs_path is", config_file_abs_path)
         working_dir_abs_path = str(self.working_dir.resolve())
         ray.config.enabled = self.ray_enabled
         ray.init(address="auto")
