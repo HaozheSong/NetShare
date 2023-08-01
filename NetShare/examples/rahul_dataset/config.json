@@ -1,10 +1,12 @@
 {
   "processors": {
     "preprocessors": [
-      "Stage1Preprocessor",
+      "CustomizableFormatPreprocessor",
       "csv_pre_processor"
     ],
-    "post_csv": true
+    "postprocessors": [
+      "csv_post_processor"
+    ]
   },
   "input_file": {
     "format": "csv"

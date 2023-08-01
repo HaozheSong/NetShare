@@ -20,7 +20,6 @@ class Generator(object):
             config,
             default_search_paths=default_configs.__path__)
         config = copy.deepcopy(self._config)
-
         global_config = self._config["global_config"]
 
         if 'original_data_folder' in global_config and \

@@ -7,10 +7,10 @@ from .preprocessor import Preprocessor
 import os
 
 
-class Stage1Preprocessor(Preprocessor):
+class CustomizableFormatPreprocessor(Preprocessor):
     def __init__(self, input_dataset_path, output_dataset_path, input_config_path, output_config_path):
         """
-        Initiate a stage 1 preprocessor.
+        Initiate a customizable format preprocessor.
         :param input_dataset_path: Path to the input dataset file.
         :param output_dataset_path: Path to the output dataset file.
         :param input_config_path: Path to the input configuration file.
@@ -49,7 +49,7 @@ class Stage1Preprocessor(Preprocessor):
                 if 'to' not in field:
                     field['to'] = field['name']
                 # Default for format: str
-                field['format'] = Stage1Preprocessor.parse_format(field.get('format', 'str'))
+                field['format'] = CustomizableFormatPreprocessor.parse_format(field.get('format', 'str'))
                 # Default for abnormal: false
                 if 'abnormal' not in field:
                     field['abnormal'] = False
@@ -97,11 +97,11 @@ class Stage1Preprocessor(Preprocessor):
         with open(self._input_config_path, 'r') as input_config_file:
             config = json.load(input_config_file)
         fields_configs = config['fields']
-        fields = Stage1Preprocessor.get_fields(fields_configs)
+        fields = CustomizableFormatPreprocessor.get_fields(fields_configs)
 
         input_config = config['input_file']
-        df = Stage1Preprocessor.to_dataframe(self._input_dataset_path, input_config)
-        Stage1Preprocessor.parse_field(fields, df, self._result)
+        df = CustomizableFormatPreprocessor.to_dataframe(self._input_dataset_path, input_config)
+        CustomizableFormatPreprocessor.parse_field(fields, df, self._result)
 
         os.makedirs(os.path.dirname(self._output_dataset_path), exist_ok=True)
         self._result.to_csv(self._output_dataset_path, index=True)
