@@ -2,8 +2,8 @@ import json
 import shutil
 
 import pandas as pd
-from . import parse_func
-from .preprocessor import Preprocessor
+from netshare.pre_post_processors import parse_func
+from netshare.pre_post_processors.preprocessor import Preprocessor
 import os
 
 
@@ -72,6 +72,20 @@ class CustomizableFormatPreprocessor(Preprocessor):
                 field['format'], errors='ignore')
 
     @staticmethod
+    def get_preprocessor_config(config):
+        """
+        Extract the specific preprocessor's config from the whole config JSON.
+        :param config: The whole configuration JSON.
+        :return: The specific preprocessor's config.
+        """
+        default = {'input_file_format': 'zeek_log_json'}
+        preprocessors = config['processors']['preprocessors']
+        for preprocessor in preprocessors:
+            if preprocessor['class'] != 'CustomizableFormatPreprocessor':
+                continue
+            return preprocessor.get('config', default)
+
+    @staticmethod
     def to_dataframe(input_path, input_config):
         """
         Extract origin input file to pandas dataframe.
@@ -79,7 +93,7 @@ class CustomizableFormatPreprocessor(Preprocessor):
         :param input_config: Input config with file format.
         :return: Extracted pandas dataframe.
         """
-        input_format = input_config.get('format', 'zeek_log_json')  # Default: 'zeek_log_json'
+        input_format = input_config.get('input_file_format', 'zeek_log_json')  # Default: 'zeek_log_json'
         if input_format == 'csv':
             return pd.read_csv(input_path)
 
@@ -99,7 +113,7 @@ class CustomizableFormatPreprocessor(Preprocessor):
         fields_configs = config['fields']
         fields = CustomizableFormatPreprocessor.get_fields(fields_configs)
 
-        input_config = config['input_file']
+        input_config = CustomizableFormatPreprocessor.get_preprocessor_config(config)
         df = CustomizableFormatPreprocessor.to_dataframe(self._input_dataset_path, input_config)
         CustomizableFormatPreprocessor.parse_field(fields, df, self._result)
 

@@ -130,8 +130,7 @@ class Driver:
 
         preprocessor_list = self.config['processors']['preprocessors']
         for p in preprocessor_list:
-            print(p)
-            preprocessor_class = getattr(pre_post_processors, p)
+            preprocessor_class = getattr(pre_post_processors, p['class'])
             preprocessor = preprocessor_class(
                 input_dataset_path=input_dataset_path,
                 output_dataset_path=output_dataset_path,
@@ -140,7 +139,7 @@ class Driver:
             )
             preprocessor.preprocess()
 
-            input_dataset_path = output_dataset_path
+            input_dataset_path = preprocessor.get_output_dataset_path()
             input_config_path = output_config_path
             self.preprocessed_config_file = output_config_path
 
@@ -158,7 +157,7 @@ class Driver:
         postprocessor_list = self.config['processors']['postprocessors']
         for p in postprocessor_list:
             print(p)
-            postprocessor_class = getattr(pre_post_processors, p)
+            postprocessor_class = getattr(pre_post_processors, p['class'])
             postprocessor = postprocessor_class(
                 input_dataset_path=input_dataset_path,
                 output_dataset_path=output_dataset_path,

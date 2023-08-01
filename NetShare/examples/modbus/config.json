@@ -1,15 +1,27 @@
 {
   "processors": {
     "preprocessors": [
-      "CustomizableFormatPreprocessor",
-      "csv_pre_processor"
+      {
+        "class": "ZeekPreprocessor",
+        "config": {
+          "target_protocol": "modbus"
+        }
+      },
+      {
+        "class": "CustomizableFormatPreprocessor",
+        "config": {
+          "input_file_format": "zeek_log_json"
+        }
+      },
+      {
+        "class": "csv_pre_processor"
+      }
     ],
     "postprocessors": [
-      "csv_post_processor"
+      {
+        "class": "csv_post_processor"
+      }
     ]
-  },
-  "input_file": {
-    "format": "zeek_log_json"
   },
   "global_config": {
     "overwrite": true,
