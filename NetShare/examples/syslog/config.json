@@ -1,0 +1,98 @@
+{
+  "processors": {
+    "preprocessors": [
+      "CustomizableFormatPreprocessor",
+      "csv_pre_processor"
+    ],
+    "postprocessors": [
+      "csv_post_processor"
+    ]
+  },
+  "input_file": {
+    "format": "zeek_log_json"
+  },
+  "global_config": {
+    "overwrite": true,
+    "dataset_type": "netflow",
+    "n_chunks": 1,
+    "dp": false
+  },
+  "default": "single_event_per_row.json",
+  "pre_post_processor": {
+    "class": "NetsharePrePostProcessor",
+    "config": {
+      "word2vec": {
+        "vec_size": 10,
+        "model_name": "word2vec_vecSize",
+        "annoy_n_trees": 100,
+        "pretrain_model_path": null
+      },
+      "metadata": [],
+      "timeseries": []
+    }
+  },
+  "model": {
+    "class": "DoppelGANgerTorchModel",
+    "config": {
+      "batch_size": 100,
+      "sample_len": [
+        1,
+        5,
+        10
+      ],
+      "sample_len_expand": true,
+      "epochs": 60,
+      "extra_checkpoint_freq": 1,
+      "epoch_checkpoint_freq": 5
+    }
+  },
+  "fields": {
+    "timestamp": [
+      {
+        "name": "ts",
+        "parse": "second2micro",
+        "format": "timestamp",
+        "encoding": "timestamp"
+      }
+    ],
+    "metadata": [
+      {
+        "name": "id.orig_h",
+        "parse": "ip_quad2int",
+        "format": "integer",
+        "encoding": "bit"
+      },
+      {
+        "name": "id.orig_p",
+        "format": "integer",
+        "encoding": "word_port"
+      },
+      {
+        "name": "id.resp_h",
+        "parse": "ip_quad2int",
+        "format": "integer",
+        "abnormal": true,
+        "encoding": "bit"
+      },
+      {
+        "name": "id.resp_p",
+        "format": "integer",
+        "encoding": "word_port"
+      }
+    ],
+    "timeseries": [
+      {
+        "name": "facility",
+        "parse": "syslog_facility2code",
+        "format": "integer",
+        "encoding": "categorical"
+      },
+      {
+        "name": "severity",
+        "parse": "syslog_severity2code",
+        "format": "integer",
+        "encoding": "categorical"
+      }
+    ]
+  }
+}
