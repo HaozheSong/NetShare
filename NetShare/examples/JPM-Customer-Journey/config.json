@@ -1,8 +1,9 @@
 {
     "processors": {
-        "zeek": false,
-        "pre_csv": false,
-        "post_csv": false
+        "preprocessors": [
+        ],
+        "postprocessors": [
+        ]
     },
     "global_config": {
         "original_data_file": "journey-small.csv",
