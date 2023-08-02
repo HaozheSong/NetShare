@@ -1,15 +1,21 @@
 {
   "processors": {
     "preprocessors": [
-      "CustomizableFormatPreprocessor",
-      "csv_pre_processor"
+      {
+        "class": "CustomizableFormatPreprocessor",
+        "config": {
+          "input_file_format": "csv"
+        }
+      },
+      {
+        "class": "csv_pre_processor"
+      }
     ],
     "postprocessors": [
-      "csv_post_processor"
+      {
+        "class": "csv_post_processor"
+      }
     ]
-  },
-  "input_file": {
-    "format": "csv"
   },
   "global_config": {
     "overwrite": true,
