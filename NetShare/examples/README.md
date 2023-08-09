@@ -19,14 +19,14 @@ pip install -e SDMetrics_timeseries/
 ```
 # Getting Started
 ## Prepare Data
-NetShare supports the following file formats,
+NetShare supports the following file formats:
 * *.csv
 * *.pcap
 * *.log
 ## Install (optional)
 If you're using Zeek's file, refer to this [link](https://github.com/netsharecmu/NetShare_Summer2023_Internship/blob/main/NetShare/examples/modbus/Modbus_NetShare.ipynb) for additional install requirements.
 ## Prepare Configuration File
-Create a configuration file in `JSON` format. Follow the steps below, using syslogs configuration file for reference.
+Create a configuration file in `JSON` format. Follow the steps below, take the syslogs configuration file for reference.
 #### Step1. Config *processors*
 Config `"processors"` when need specific preprocessors and the postprocessor for raw data, leave it empty if not.
 
@@ -174,6 +174,7 @@ Example for a field:
 * `encoding`: **required**, the encoding method to be used on the field when training NetShare model. Supported encoding methods:
   * bit
   * word_proto
+  * word_port
   * categorical
   * list_attributes
   * float
