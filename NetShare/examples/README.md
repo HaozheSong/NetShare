@@ -24,7 +24,7 @@ NetShare supports the following file formats:
 * *.pcap
 * *.log
 ## Install (optional)
-If you're using Zeek's file, refer to this [link](https://github.com/netsharecmu/NetShare_Summer2023_Internship/blob/main/NetShare/examples/modbus/Modbus_NetShare.ipynb) for additional install requirements.
+If you're using Zeek, refer to this [link](https://github.com/netsharecmu/NetShare_Summer2023_Internship/blob/main/NetShare/examples/modbus/Modbus_NetShare.ipynb) for additional install requirements.
 ## Prepare Configuration File
 Create a configuration file in `JSON` format. Follow the steps below, take the syslogs configuration file for reference.
 #### Step1. Config *processors*
