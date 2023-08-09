@@ -218,7 +218,7 @@ eg. timestamp
 
 ```
 
-Refer to this [link](https://github.com/netsharecmu/NetShare_Summer2023_Internship/blob/modbus_processors/NetShare/examples/syslog/config.json) for whole syslog example config file.
+Refer to this [link](https://github.com/netsharecmu/NetShare_Summer2023_Internship/blob/modbus_processors/NetShare/examples/syslog/config.json) for the entire syslog example config file.
 
 ## Run with NetShare
 Create a drive.py file
