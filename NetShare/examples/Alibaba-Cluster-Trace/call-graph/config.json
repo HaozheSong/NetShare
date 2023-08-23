@@ -1,8 +1,7 @@
 {
     "processors": {
-        "zeek": false,
-        "pre_csv": false,
-        "post_csv": false
+        "preprocessors": [],
+        "postprocessors": []
     },
     "global_config": {
         "original_data_file": "raw.csv",
@@ -54,13 +53,13 @@
                     "column": "dm",
                     "type": "string",
                     "encoding": "categorical"
-                },{
+                },
+                {
                     "column": "rt",
                     "type": "float",
                     "normalization": "MINUSONE_ONE",
                     "log1p_norm": false
                 }
-
             ]
         }
     },

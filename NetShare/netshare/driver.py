@@ -120,13 +120,19 @@ class Driver:
             dst=self.preprocessed_config_file
         )
         # preprocess dataset and config.json
-        with open(self.config_file) as self.config_fd:
-            self.config = json.load(self.config_fd)
+        with open(self.config_file) as config_fd:
+            self.config = json.load(config_fd)
 
         input_dataset_path = self.moved_dataset_file
         output_dataset_path = self.preprocessed_dataset_file
         input_config_path = self.preprocessed_config_file
         output_config_path = self.preprocessed_config_file
+
+        self.config['global_config']['original_data_file'] = str(
+            self.moved_dataset_file.resolve()
+        )
+        with open(self.preprocessed_config_file, 'w') as config_fd:
+            json.dump(self.config, config_fd)
 
         preprocessor_list = self.config['processors']['preprocessors']
         for p in preprocessor_list:
@@ -169,16 +175,16 @@ class Driver:
     def run(self, post_hook=None):
         if self.redirect_stdout_stderr:
             if self.separate_stdout_stderr_log:
-                sys.stdout = open(self.stdout_log_file, 'w')
-                sys.stderr = open(self.stderr_log_file, 'w')
+                sys.stdout = open(self.stdout_log_file, 'w', 1)
+                sys.stderr = open(self.stderr_log_file, 'w', 1)
             else:
-                stdout_stderr_log_fd = open(self.stdout_stderr_log_file, 'w')
+                stdout_stderr_log_fd = open(
+                    self.stdout_stderr_log_file, 'w', 1
+                )
                 sys.stdout = stdout_stderr_log_fd
                 sys.stderr = stdout_stderr_log_fd
         self.preprocess()
-        print("config_file is", self.preprocessed_config_file)
         config_file_abs_path = str(self.preprocessed_config_file.resolve())
-        print("config_file_abs_path is", config_file_abs_path)
         working_dir_abs_path = str(self.working_dir.resolve())
         ray.config.enabled = self.ray_enabled
         ray.init(address="auto")
