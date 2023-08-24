@@ -1,9 +1,26 @@
 import grpc
 from concurrent import futures
+import logging
+import sys
 
 from grpc_server import task_pb2, task_pb2_grpc
 
 from grpc_server.grpc_driver import GrpcDriver
+
+logger = logging.getLogger('NetShareGrpcServer')
+logger.setLevel(logging.INFO)
+logger.propagate = False
+formatter = logging.Formatter('[%(asctime)s:%(levelname)s] %(message)s')
+console_hanlder = logging.StreamHandler(sys.stdout)
+console_hanlder.setLevel(logging.INFO)
+console_hanlder.setFormatter(formatter)
+file_hanlder = logging.FileHandler(
+    'grpc_server.log', mode='a', encoding='utf-8'
+)
+file_hanlder.setLevel(logging.INFO)
+file_hanlder.setFormatter(formatter)
+logger.addHandler(console_hanlder)
+logger.addHandler(file_hanlder)
 
 
 class TaskServicer(task_pb2_grpc.TaskServicer):
@@ -12,7 +29,7 @@ class TaskServicer(task_pb2_grpc.TaskServicer):
         self.tasks = {}
 
     def StartTask(self, request_iterator, context):
-        print(f'Request to start a task from {context.peer()}')
+        logger.info(f'Request to start a task from {context.peer()}')
         task = None
         for request in request_iterator:
             if task is None:
@@ -39,7 +56,9 @@ class TaskServicer(task_pb2_grpc.TaskServicer):
         )
 
     def QueryStatus(self, request, context):
-        print(f'Request to query the status of the task from {context.peer()}')
+        logger.info(
+            f'Request to query the status of the task from {context.peer()}'
+        )
         task = self.tasks[request.task_id]
         log = task.read_stdout_stderr_log()
         if task.process.is_alive():
@@ -55,7 +74,7 @@ class TaskServicer(task_pb2_grpc.TaskServicer):
         )
 
     def GetResult(self, request, context):
-        print(
+        logger.info(
             f'Request to get result of {request.task_name} from {context.peer()}'
         )
         task = self.tasks[request.task_id]
@@ -76,7 +95,7 @@ def serve():
     )
 
     server.add_insecure_port('[::]:50051')
-    print('Starting gRPC server at [::]:50051')
+    logger.info('Starting gRPC server at [::]:50051')
     server.start()
     server.wait_for_termination()
 

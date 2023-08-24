@@ -2,7 +2,7 @@ import json
 import urllib
 
 from netshare.driver import Driver
-
+from .config import WEB_SERVER_ADDR
 
 class GrpcDriver(Driver):
     def __init__(self, task_id, working_dir_name, dataset_file_name, config_file_name):
@@ -43,7 +43,7 @@ class GrpcDriver(Driver):
         }
         json_data = json.dumps(completed_status)
         put_json_request = urllib.request.Request(
-            url=f'http://localhost:8000/api/task/update/',
+            url=f'http://{WEB_SERVER_ADDR}/api/task/update/',
             method='PUT',
             headers={'Content-Type': 'application/json'},
             data=json_data.encode()

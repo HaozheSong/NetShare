@@ -1,3 +1,6 @@
 .vscode
 .idea
 venv
+
+NetShare/grpc_server/config.py
+NetShare/grpc_server/grpc_server.log
