@@ -1,8 +1,8 @@
-import json
-import urllib
+import requests
 
 from netshare.driver import Driver
 from .config import WEB_SERVER_ADDR
+
 
 class GrpcDriver(Driver):
     def __init__(self, task_id, working_dir_name, dataset_file_name, config_file_name):
@@ -11,7 +11,7 @@ class GrpcDriver(Driver):
         self.working_dir = self.results_dir.joinpath(working_dir_name)
         self.working_dir.mkdir(parents=True, exist_ok=True)
 
-        # src_dir stores original dataset and config.json uploaded by the user (only for WebDriver)
+        # src_dir stores original dataset and config.json uploaded by the user (only for GrpcDriver)
         # src_dir = '.../NetShare/results/<working_dir_name>/src'
         self.src_dir = self.working_dir.joinpath('src')
         self.src_dir.mkdir(parents=True, exist_ok=True)
@@ -41,18 +41,10 @@ class GrpcDriver(Driver):
             'task_id': self.task_id,
             'is_completed': True,
         }
-        json_data = json.dumps(completed_status)
-        put_json_request = urllib.request.Request(
-            url=f'http://{WEB_SERVER_ADDR}/api/task/update/',
-            method='PUT',
-            headers={'Content-Type': 'application/json'},
-            data=json_data.encode()
+        requests.put(
+            f'https://{WEB_SERVER_ADDR}/api/task/update/',
+            json=completed_status
         )
-        max_attempts = 3
-        for _ in range(max_attempts):
-            with urllib.request.urlopen(put_json_request) as response:
-                if response.read().decode() == 'success':
-                    return
 
     def run_in_a_process(self):
         super().run_in_a_process(args=(self.notify_completion,))
