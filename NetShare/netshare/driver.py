@@ -2,7 +2,7 @@ import pathlib
 import shutil
 import json
 import sys
-from multiprocessing import Process
+from multiprocessing import get_context
 
 import netshare.ray as ray
 from netshare import Generator
@@ -201,6 +201,6 @@ class Driver:
         if (callable(post_hook)):
             post_hook()
 
-    def run_in_a_process(self, args=None):
-        self.process = Process(target=self.run, args=args)
+    def run_in_a_process(self, args=tuple()):
+        self.process = get_context('spawn').Process(target=self.run, args=args)
         self.process.start()
