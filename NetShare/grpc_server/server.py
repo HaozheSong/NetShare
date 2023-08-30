@@ -79,7 +79,7 @@ class TaskServicer(task_pb2_grpc.TaskServicer):
         )
         task = self.tasks[request.task_id]
         for file_path in task.result_dir.iterdir():
-            if file_path.suffix == '.json':
+            if file_path.suffix == '.json' or file_path.name == 'synthetic_data.csv':
                 with open(file_path, 'rb') as fd:
                     yield task_pb2.ResultFile(
                         file_name=file_path.name,
