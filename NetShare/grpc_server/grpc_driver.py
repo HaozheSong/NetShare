@@ -1,7 +1,8 @@
 import requests
+import shutil
 
 from netshare.driver import Driver
-from .config import WEB_SERVER_ADDR
+from .config import WEB_SERVER_ADDR, WEB_SERVER_PROTOCOL
 
 
 class GrpcDriver(Driver):
@@ -37,12 +38,19 @@ class GrpcDriver(Driver):
         return {'log_file_name': self.stdout_stderr_log_file.name, 'log_file_content': log_content}
 
     def notify_completion(self):
+        log_file_name = self.stdout_stderr_log_file.name
+        result_log_file = self.result_dir.joinpath(log_file_name)
+        shutil.copy2(
+            src=self.stdout_stderr_log_file,
+            dst=result_log_file
+        )
+
         completed_status = {
             'task_id': self.task_id,
             'is_completed': True,
         }
         requests.put(
-            f'https://{WEB_SERVER_ADDR}/api/task/update/',
+            f'{WEB_SERVER_PROTOCOL}://{WEB_SERVER_ADDR}/api/task/update/',
             json=completed_status
         )
 

@@ -22,6 +22,10 @@ class Driver:
     # results_dir = '.../NetShare/results'
     results_dir = netshare_dir.joinpath('results')
 
+    stdout_stderr_log_file_name = 'stdout_stderr.log'
+    stdout_log_file_name = 'stdout.log'
+    stderr_log_file_name = 'stderr.log'
+
     def __init__(self, working_dir_name, dataset_file, config_file,
                  overwrite_existing_working_dir=False,
                  redirect_stdout_stderr=False, separate_stdout_stderr_log=False,
@@ -84,15 +88,17 @@ class Driver:
         self.logs_dir.mkdir(parents=True, exist_ok=True)
         # stdout_stderr_log_file = '.../NetShare/results/<working_dir_name>/logs/stdout_stderr.log
         self.stdout_stderr_log_file = self.logs_dir.joinpath(
-            'stdout_stderr.log'
+            self.stdout_stderr_log_file_name
         )
         if redirect_stdout_stderr and not separate_stdout_stderr_log:
             with open(self.stdout_stderr_log_file, 'w'):
                 pass
         # stdout_log_file = '.../NetShare/results/<working_dir_name>/logs/stdout.log
-        self.stdout_log_file = self.logs_dir.joinpath('stdout.log')
+        self.stdout_log_file = self.logs_dir.joinpath(
+            self.stdout_log_file_name)
         # stderr_log_file = '.../NetShare/results/<working_dir_name>/logs/stderr.log
-        self.stderr_log_file = self.logs_dir.joinpath('stderr.log')
+        self.stderr_log_file = self.logs_dir.joinpath(
+            self.stderr_log_file_name)
         if redirect_stdout_stderr and separate_stdout_stderr_log:
             with open(self.stdout_log_file, 'w'):
                 with open(self.stderr_log_file, 'w'):
