@@ -9,10 +9,11 @@ stub = task_pb2_grpc.TaskStub(channel)
 
 now_utc = datetime.datetime.now(datetime.timezone.utc)
 now_utc_str = now_utc.strftime('%Y%m%d_%H%M%S')
-
 start_request = []
-dataset_file_path = '../examples/rahul_dataset/rahul.csv'
-config_file_path = '../examples/rahul_dataset/config.json'
+# dataset_file_path = '../examples/rahul_dataset/rahul.csv'
+# config_file_path = '../examples/rahul_dataset/config.json'
+dataset_file_path = '../examples/Alibaba-Cluster-Trace/call-graph/raw.csv'
+config_file_path = '../examples/Alibaba-Cluster-Trace/call-graph/config.json'
 chunk_size = 1024
 with open(dataset_file_path, 'rb') as dataset_fd:
     with open(config_file_path, 'rb') as config_fd:
@@ -25,7 +26,7 @@ with open(dataset_file_path, 'rb') as dataset_fd:
                 task_id=0,
                 task_kind='customized',
                 created_at=now_utc_str,
-                dataset_file_name='rahul.csv',
+                dataset_file_name='raw.csv',
                 dataset_file_content=dataset_chunk,
                 config_file_name='config.json',
                 config_file_content=config_chunk

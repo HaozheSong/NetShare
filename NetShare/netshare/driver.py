@@ -2,7 +2,7 @@ import pathlib
 import shutil
 import json
 import sys
-from multiprocessing import Process
+from multiprocessing import get_context
 
 import netshare.ray as ray
 from netshare import Generator
@@ -21,6 +21,10 @@ class Driver:
     netshare_dir = pathlib.Path(__file__).parents[1]
     # results_dir = '.../NetShare/results'
     results_dir = netshare_dir.joinpath('results')
+
+    stdout_stderr_log_file_name = 'stdout_stderr.log'
+    stdout_log_file_name = 'stdout.log'
+    stderr_log_file_name = 'stderr.log'
 
     def __init__(self, working_dir_name, dataset_file, config_file,
                  overwrite_existing_working_dir=False,
@@ -84,15 +88,17 @@ class Driver:
         self.logs_dir.mkdir(parents=True, exist_ok=True)
         # stdout_stderr_log_file = '.../NetShare/results/<working_dir_name>/logs/stdout_stderr.log
         self.stdout_stderr_log_file = self.logs_dir.joinpath(
-            'stdout_stderr.log'
+            self.stdout_stderr_log_file_name
         )
         if redirect_stdout_stderr and not separate_stdout_stderr_log:
             with open(self.stdout_stderr_log_file, 'w'):
                 pass
         # stdout_log_file = '.../NetShare/results/<working_dir_name>/logs/stdout.log
-        self.stdout_log_file = self.logs_dir.joinpath('stdout.log')
+        self.stdout_log_file = self.logs_dir.joinpath(
+            self.stdout_log_file_name)
         # stderr_log_file = '.../NetShare/results/<working_dir_name>/logs/stderr.log
-        self.stderr_log_file = self.logs_dir.joinpath('stderr.log')
+        self.stderr_log_file = self.logs_dir.joinpath(
+            self.stderr_log_file_name)
         if redirect_stdout_stderr and separate_stdout_stderr_log:
             with open(self.stdout_log_file, 'w'):
                 with open(self.stderr_log_file, 'w'):
@@ -120,13 +126,19 @@ class Driver:
             dst=self.preprocessed_config_file
         )
         # preprocess dataset and config.json
-        with open(self.config_file) as self.config_fd:
-            self.config = json.load(self.config_fd)
+        with open(self.config_file) as config_fd:
+            self.config = json.load(config_fd)
 
         input_dataset_path = self.moved_dataset_file
         output_dataset_path = self.preprocessed_dataset_file
         input_config_path = self.preprocessed_config_file
         output_config_path = self.preprocessed_config_file
+
+        self.config['global_config']['original_data_file'] = str(
+            self.moved_dataset_file.resolve()
+        )
+        with open(self.preprocessed_config_file, 'w') as config_fd:
+            json.dump(self.config, config_fd)
 
         preprocessor_list = self.config['processors']['preprocessors']
         for p in preprocessor_list:
@@ -169,16 +181,16 @@ class Driver:
     def run(self, post_hook=None):
         if self.redirect_stdout_stderr:
             if self.separate_stdout_stderr_log:
-                sys.stdout = open(self.stdout_log_file, 'w')
-                sys.stderr = open(self.stderr_log_file, 'w')
+                sys.stdout = open(self.stdout_log_file, 'w', 1)
+                sys.stderr = open(self.stderr_log_file, 'w', 1)
             else:
-                stdout_stderr_log_fd = open(self.stdout_stderr_log_file, 'w')
+                stdout_stderr_log_fd = open(
+                    self.stdout_stderr_log_file, 'w', 1
+                )
                 sys.stdout = stdout_stderr_log_fd
                 sys.stderr = stdout_stderr_log_fd
         self.preprocess()
-        print("config_file is", self.preprocessed_config_file)
         config_file_abs_path = str(self.preprocessed_config_file.resolve())
-        print("config_file_abs_path is", config_file_abs_path)
         working_dir_abs_path = str(self.working_dir.resolve())
         ray.config.enabled = self.ray_enabled
         ray.init(address="auto")
@@ -195,6 +207,6 @@ class Driver:
         if (callable(post_hook)):
             post_hook()
 
-    def run_in_a_process(self, args=None):
-        self.process = Process(target=self.run, args=args)
+    def run_in_a_process(self, args=tuple()):
+        self.process = get_context('spawn').Process(target=self.run, args=args)
         self.process.start()

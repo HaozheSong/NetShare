@@ -3,6 +3,7 @@ import re
 import copy
 import warnings
 import pandas as pd
+import shutil
 
 import netshare.pre_post_processors as pre_post_processors
 import netshare.model_managers as model_managers
@@ -222,10 +223,21 @@ class Generator(object):
             if f'id-{largest_id}.csv' in filename][0]
         print(
             f'The filename with the largest ID is: {filename_with_largest_id}')
-        synthetic_data = pd.read_csv(os.path.join(
+        result_csv_file_path = os.path.join(
             self._get_post_processed_data_folder(work_folder),
             filename_with_largest_id
-        ))
+        )
+        synthetic_data = pd.read_csv(result_csv_file_path)
+        # Save result csv file to the result folder
+        save_folder = os.path.join(work_folder, 'result')
+        os.makedirs(save_folder, exist_ok=True)
+        save_path = os.path.join(
+            work_folder, 'result/synthetic_data.csv'
+        )
+        shutil.copy2(
+            src=result_csv_file_path,
+            dst=save_path
+        )
 
         # Visualize the real data and synthetic data
         pre_post_processor_config = Config(self._config["global_config"])
@@ -239,9 +251,6 @@ class Generator(object):
             config_dict=sdmetrics_config['config'])
         my_report.generate(real_data[synthetic_data.columns], synthetic_data,
                            sdmetrics_config['metadata'])
-
-        save_folder = os.path.join(work_folder, 'result')
-        os.makedirs(save_folder, exist_ok=True)
         my_report.fig2png(save_folder)
         my_report.fig2json(save_folder)
         my_report.save_result_as_json(save_folder)
